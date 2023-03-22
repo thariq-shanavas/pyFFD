@@ -1,0 +1,11 @@
+__pycache__/
+Results/
+*.xslx
+*.csv
+*.mat
+*.npy
+tissuebeampropagation/
+.DS_Store
+.ipynb_checkpoints
+.vscode
+*.png
