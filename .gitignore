@@ -1,7 +1,6 @@
 __pycache__/
 Results/
-*.xslx
-*.csv
+*.xlsx
 *.mat
 *.npy
 tissuebeampropagation/
