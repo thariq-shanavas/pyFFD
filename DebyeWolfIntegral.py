@@ -5,7 +5,7 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocalLength,NA,MeasurementP
     '''
     Provides the 3D field from focusing a polarized input field through a thick lens
     Axis of the lens is along z. Input polarization is assumed to be along x direction.
-    Method described in: https://doi.org/10.1016/j.optcom.2019.06.022
+    Method described in: [1] https://doi.org/10.1016/j.optcom.2019.06.022 and [2] https://doi.org/10.1364/OE.14.011277 
 
     Inputs:
     Input Field: n-by-n matrix containing the spatial distribution of Ex
@@ -48,13 +48,12 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocalLength,NA,MeasurementP
     kz = sqrt(k^2 - kx^2 - ky^2)
 
     For each x,y, calculate three integrals for Ex, Ey, Ez
-    The integral is the form of an FFT which makes computations easier. 
-    i.e., for constant z, Eq. 4 RHS is the FFT of exp(i.kz.z) A(θ,φ) / kz
     '''
 
     xy_cells = np.shape(InputField)[0]
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
+    k = 2*np.pi/wavelength*n_homogenous
 
     # Angles in the input plane, measured from the focus
     theta = np.arcsin(np.sqrt(xx**2+yy**2)/FocalLength)
@@ -68,10 +67,23 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocalLength,NA,MeasurementP
     A_0phi = -InputField*np.sin(phi)
 
     # Angular spectrum of input field in cartesian coordinates
+    # Note: There is a disagreement in sign between [1] and [2] for Az. Following [2]
+    # These are the fields *evaluated on a curved surface* centered at the focus and radius of curvature = focal length
+    # See fig. 1 in Ref [2]
+
     Ax = np.sqrt(np.cos(theta))*(np.cos(theta)*np.cos(phi)*A_0rho - np.sin(phi)*A_0phi)
     Ay = np.sqrt(np.cos(theta))*(np.cos(theta)*np.sin(phi)*A_0rho + np.cos(phi)*A_0phi)
-    Az = -np.sqrt(np.cos(theta))*np.sin(theta)*A_0phi
+    Az = np.sqrt(np.cos(theta))*(np.sin(theta)*A_0rho)
+
+    # Eq. 6, Ref. [2]
+    kx = -k*np.cos(phi)*np.sin(theta)
+    ky = -k*np.sin(phi)*np.sin(theta)
+    kz = k*np.cos(theta)
 
     # Debye-Wolf Integral
-    fx = fy = 1/(dx*xy_cells)*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-    Ex = 
+    # Important note: As per [2], we integrate in the d(theta).d(phi) domain. The E-field is not uniformly sampled in theta and phi.
+    for i in range(xy_cells):
+        for j in range(xy_cells):
+            
+            # Integrand in the Debye-Wolf integral, eq. 5, Ref [2]
+            
