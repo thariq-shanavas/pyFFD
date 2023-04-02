@@ -1,16 +1,18 @@
 import numpy as np
 from FriendlyFourierTransform import FFT2
 
-def TightFocus(InputField,dx,wavelength,n_homogenous,FocalLength,MeasurementPlane_z):
+def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0):
     '''
     Provides the 3D field from focusing a polarized input field through a thick lens
     Axis of the lens is along z. Input polarization is assumed to be along x direction.
     Method described in: [1] https://doi.org/10.1016/j.optcom.2019.06.022 and [2] https://doi.org/10.1364/OE.14.011277 
+    Important: The Debye approximation is best in a z-plane near the focus. It's worse the farther you are from the focus.
+    Tip: If the output pixel resolution is too low, try increasing dx or xy_cells
 
     Inputs:
     Input Field: n-by-n matrix containing the spatial distribution of Ex
     dx: Discretization of space
-    Focal Length: Focal length of the lens measured in the medium, i.e., depth at which light is focused
+    FocusDepth: Focal length of the lens measured in the medium, i.e., depth at which light is focused
     Measurement Plane z: z-coordinate of the xy-plane at which the field output is desired, measured from focus.
     n_homogenous: The refractive index of the medium, which is assumed to be homogenous
     wavelength: wavelength of the light
@@ -24,7 +26,7 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocalLength,MeasurementPlan
     Methodology:
 
     Step 1: Initialization
-    Calculate n-by-n matrices theta and phi using FocalLength, xy_cells and dx
+    Calculate n-by-n matrices theta and phi using FocusDepth, xy_cells and dx
     Calculate n-by-n matrices A_0rho and A_0phi from InputField
     Calculate n-by-n matrices Ax, Ay, Az from A_0rho, A_0phi, theta and phi using Eq. 5
     
@@ -53,10 +55,10 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocalLength,MeasurementPlan
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
     k = 2*np.pi/wavelength*n_homogenous
-    NA = n_homogenous*(dx*xy_cells/2)/(FocalLength)     # Obviously not the actual NA, but this is used for mapping k-space to real space later
+    NA = n_homogenous*np.sin(np.arctan((dx*xy_cells/2)/(FocusDepth)))     # Obviously not the actual NA, but this is used for mapping k-space to real space later
 
     # Angles in the input plane, measured from the focus
-    theta = np.arcsin(np.sqrt(xx**2+yy**2)/FocalLength)
+    theta = np.arctan(np.sqrt(xx**2+yy**2)/FocusDepth)
     phi = np.arctan2(yy,xx)
 
     # Input fields in cylindrical coordinates
@@ -91,17 +93,18 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocalLength,MeasurementPlan
     # Ax, Ay, Az were originally evaluated in a curved plane with non-uniform sampling in theta and phi.
     # Equivalently, sampled uniformly in a grid spaced by dx in a plane projection.
     # If we can cransform the discretization dx to dk, Ax becomes uniformly sampled in kx-ky space. We need this to run FFT.
-    # The whole plane projection with N samples in the x-direction is mapped to 2.k.sin(theta_max) in the x-direction.
+    # The plane projection with N samples in the x-direction is mapped to 2.k.sin(theta_max) in the x-direction. i.e., -k.sin(theta) to k.sin(theta)
     # sin(theta_max) is related to the NA of the lens as NA/index
-    # Therefore kx is discretized as (d kx) = (2.k.NA/n_homogenous)/xy_cells
+    # Therefore kx is discretized as (d kx) = (2.k.{NA/n_homogenous})/xy_cells
 
     d_kx = 2*k*NA/(n_homogenous*xy_cells)       
     
     # After the FFT, the output space is descretized as 1/(d_kx*xy_cells) = wavelength/(4*pi*NA)
-    out_dx = wavelength/(4*np.pi*NA) # Fascinating!! Does not depend on dx or N.
+    # Note that this is not really the NA of the lens, rather, related to the max. angle subtended by the input plane at focus.
+    out_dx = wavelength/(4*np.pi*NA) 
 
     Ex = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz)
-    Ey = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz)
-    Ez = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz)
+    Ey = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz)
+    Ez = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Az/kz)
 
-    return Ex,Ey,Ez
+    return Ex,Ey,Ez,out_dx
