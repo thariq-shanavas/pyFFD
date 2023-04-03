@@ -14,8 +14,8 @@ start_time = time.time()
 # Simulation parameters
 # TODO: For FDFD, both initial values should be calculated using debye-Wolf method.
 wavelength = 500e-9
-dz = 500e-9
-dx = dy = 15e-6 # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
+dz = 50e-9
+dx = dy = 150e-6 # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
 ScalingFactor = 1   # Scale the output of Debye-Wolf calculation
 absorption_padding = 2*dx # Thickness of absorbing boundary
@@ -25,7 +25,7 @@ xy_cells = 512    # Keep this a power of 2 for efficient FFT
 
 beam_radius = 1e-3
 focus_depth = 2e-3
-FDFD_depth = 10e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
+FDFD_depth = 1e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
@@ -49,12 +49,13 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-unique_layers=int(FDFD_depth/(dz)) 
+unique_layers=int(FDFD_depth/(5*dz)) 
 print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6,xy_cells*dx*10**6,focus_depth*10**6))
 
 # Calculate fields at FDFD_depth
 dx_original = dx
 Ex,Ey,Ez,dx = TightFocus(seed,dx,wavelength,n_h,focus_depth,FDFD_depth,ScalingFactor)
+Ex2,Ey2,Ez2,dx = TightFocus(seed,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,ScalingFactor)
 print('Discretization changed from %1.1f nm to %1.1f nm'  %(dx_original*10**9,dx*10**9))
 
 
@@ -78,10 +79,12 @@ n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
 ## For first two steps of Ex
 Uz[:,:,0] = Ez
 Az[:,:,0] = FFT2(Uz[:,:,0])
-Az[:,:,1] = H*Az[:,:,0]
-Uz[:,:,1] = iFFT2(Az[:,:,1])
+
+Uz[:,:,1] = Ez2
+Az[:,:,1] = FFT2(Uz[:,:,1])
+
 current_step = 2
-Uz,Az, Field_snapshots, current_step = propagate_Fourier(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
+Uz,Az, Field_snapshots, current_step = propagate(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
 
 fig, ax = plt.subplots(3, 3)
 axis = 10**6*dx_original*indices
