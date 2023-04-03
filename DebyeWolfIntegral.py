@@ -1,7 +1,8 @@
 import numpy as np
 from FriendlyFourierTransform import FFT2
+from scipy.interpolate import RegularGridInterpolator
 
-def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0):
+def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,ScalingFactor=1):
     '''
     Provides the 3D field from focusing a polarized input field through a thick lens
     Axis of the lens is along z. Input polarization is assumed to be along x direction.
@@ -107,4 +108,14 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
     Ey = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz)
     Ez = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Az/kz)
 
-    return Ex,Ey,Ez,out_dx
+    # Scaling the discretization in space
+    
+    
+    interpEx = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ex, bounds_error = False, fill_value = 0)
+    interpEy = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ey, bounds_error = False, fill_value = 0)
+    interpEz = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ez, bounds_error = False, fill_value = 0)
+    dx_new = out_dx*ScalingFactor
+    xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
+
+    return interpEx((xx_new,yy_new)),interpEy((xx_new,yy_new)),interpEz((xx_new,yy_new)),dx_new
+    #return Ex,Ey,Ez, out_dx

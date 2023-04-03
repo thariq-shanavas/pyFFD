@@ -16,7 +16,7 @@ n_h = 1  # Homogenous part of refractive index
 xy_cells = 1024    # Keep this a power of 2 for efficient FFT
 
 beam_radius = 15e-6
-focus_depth = 6e-6
+focus_depth = 30e-6
 
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
@@ -33,7 +33,7 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,0)
+Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,0,0.1)
 
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
