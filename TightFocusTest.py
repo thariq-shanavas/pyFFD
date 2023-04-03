@@ -22,7 +22,7 @@ if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
     ValueError("Beam is larger than simulation cross section")
 
-beam_type = 'LG' # 'HG, 'LG', 'G'
+beam_type = 'G' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
