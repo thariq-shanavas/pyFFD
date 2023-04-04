@@ -14,9 +14,10 @@ dz = 50e-9
 n_h = 1  # Homogenous part of refractive index
 xy_cells = 1024    # Keep this a power of 2 for efficient FFT
 
-beam_radius = 1e-3
-focus_depth = 2e-3
-dx = dy = 10*beam_radius/(xy_cells)
+beam_radius = 2.38e-3
+focus_depth = 1e-3
+dx = dy = 10*2*beam_radius/(xy_cells)
+
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
     ValueError("Beam is larger than simulation cross section")

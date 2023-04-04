@@ -51,7 +51,7 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
 
     For each x,y, calculate three integrals for Ex, Ey, Ez
     '''
-    MeasurementPlane_z = -np.abs(MeasurementPlane_z)    # Origin is at focus and z axis is along the direction of propagation. See Fig 1, [1]
+    MeasurementPlane_z = -MeasurementPlane_z    # Origin is at focus and z axis is along the direction of propagation. See Fig 1, [1]
     xy_cells = np.shape(InputField)[0]
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
