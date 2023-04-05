@@ -9,7 +9,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from FriendlyFourierTransform import FFT2, iFFT2
-from PropagationAlgorithm import propagate, propagate_Fourier
+from PropagationAlgorithm import propagate, propagate_Fourier, propagate_FiniteDifference
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 from FieldPlots import PlotSnapshots, VortexNull
 from GenerateRandomTissue import RandomTissue
@@ -18,8 +18,8 @@ start_time = time.time()
 
 # Simulation parameters
 wavelength = 500e-9
-dz = 500e-9     
-dx = dy = wavelength/6 # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
+dz = 50e-9     
+dx = dy = wavelength # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 n_h = 1.33  # Homogenous part of refractive index
@@ -32,8 +32,8 @@ focal_length = 100e-6/1.33 # Focal length of lens used to focus
 Total_length = 100e-6
 
 
-beam_type = 'G' # 'HG, 'LG', 'G'
-use_picked_index = False
+beam_type = 'LG' # 'HG, 'LG', 'G'
+use_picked_index = True
 save_index = False
 l = 1  # Topological charge for LG beam
 
@@ -117,7 +117,7 @@ current_step = 2
 # propagate_Fourier() does standard Fourier Beam Propagation
 # propagate() does finite difference propagation. The step size needs to be much smaller.
 
-U,A, Field_snapshots, current_step = propagate_Fourier(U, A,Total_length, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
+U,A, Field_snapshots, current_step = propagate_FiniteDifference(U, A,Total_length, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
 Field_snapshots[:,:,0] = seed
 
 if beam_type=='LG' or beam_type=='G':
@@ -135,12 +135,12 @@ elif beam_type=='HG':
     f = PlotSnapshots(Field_snapshots, imaging_depth)    
     f.suptitle(beam_type+ str(u)+str(v))
 
-'''
+
 print('Sanity test: Total power at various depth')
 print('Power of seed: %1.4f' %(float(np.sum(Field_snapshots[:,:,0]*dx**2))))
 print('Power at depth 1: %1.4f' %(np.sum(Field_snapshots[:,:,1]*dx**2)))
 print('Power at depth 2: %1.4f' %(np.sum(Field_snapshots[:,:,2]*dx**2)))
-print('Power at depth 3: %1.4f' %(np.sum(Field_snapshots[:,:,3]*dx**2)))'''
+print('Power at depth 3: %1.4f' %(np.sum(Field_snapshots[:,:,3]*dx**2)))
 
 VNull = VortexNull(Field_snapshots[:,:,3], dx, beam_type, cross_sections = 19, num_samples = 1000)
 print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))

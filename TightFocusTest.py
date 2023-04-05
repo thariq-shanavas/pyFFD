@@ -33,7 +33,7 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,6e-6,0.1)
+Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,2e-6,0.1)
 
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
