@@ -19,7 +19,7 @@ start_time = time.time()
 # Simulation parameters
 wavelength = 500e-9
 dz = 50e-9     
-dx = dy = wavelength # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
+dx = dy = wavelength/6 # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 n_h = 1.33  # Homogenous part of refractive index
@@ -117,7 +117,7 @@ current_step = 2
 # propagate_Fourier() does standard Fourier Beam Propagation
 # propagate() does finite difference propagation. The step size needs to be much smaller.
 
-U,A, Field_snapshots, current_step = propagate_FiniteDifference(U, A,Total_length, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
+U,A, Field_snapshots, current_step = propagate(U, A,Total_length, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
 Field_snapshots[:,:,0] = seed
 
 if beam_type=='LG' or beam_type=='G':

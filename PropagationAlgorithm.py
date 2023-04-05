@@ -6,6 +6,7 @@ from FriendlyFourierTransform import FFT2, iFFT2
 
 def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_depth_indices, absorption_padding, Absorption_strength, wavelength):
     
+    # Suppressing the evanescent field to ensure stability of the algorithm. Unclear what the consequences are.
     # Inputs
     # U: xy_cells*xy_cells*3 complex
     # Electric field in real space. Modifies U[:,:,2]
@@ -36,8 +37,8 @@ def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_dept
     # current_step
     # Field(:,:,1) is duplicated as Field(:,:,1)
     print('Solving Helmholtz equation...')
-    if dx<wavelength/(np.sqrt(2)*(np.average(index)+0.1)):
-        raise NameError('Transverse resolution too small. Algorithm is numerically unstable.')
+    #if dx<wavelength/(np.sqrt(2)*(np.average(index)+0.1)):
+    #    raise NameError('Transverse resolution too small. Algorithm is numerically unstable.')
         
                           
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -64,9 +65,10 @@ def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_dept
         # Some scaling issues remain
         #A[:,:,i] = dz**2*(4*np.pi**2*(fxfx**2+fyfy**2))*A[:,:,i-1] - dz**2*FFT2(k**2*U[:,:,i-1],dx)[0] + 2*A[:,:,i-1] - A[:,:,i-2]
         A[:,:,2] = dz**2*(4*np.pi**2*(fxfx**2+fyfy**2))*A[:,:,1] - dz**2*FFT2(k[:,:,i%unique_layers]**2*U[:,:,1]) + 2*A[:,:,1] - A[:,:,0]
-        #A[:,:,i] = A[:,:,i-1]*H
+        A[:,:,2] = A[:,:,2]*((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
         
-        # Making a paraxial approximation here. i.e., assuming k_z ~ k
+        # Making a paraxial approximation here. i.e., assuming k_z ~ k. This is not a big deal since absorption_profile is zero everywhere except
+        # the boundary of the simulation volume in real space anyway.
         U[:,:,2] = iFFT2(A[:,:,2]) * np.exp(1j*k0*dz*absorption_profile)
         A[:,:,2] = FFT2(U[:,:,2])
                         
