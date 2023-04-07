@@ -13,18 +13,18 @@ start_time = time.time()
 
 # Simulation parameters
 # TODO: For FDFD, both initial values should be calculated using debye-Wolf method.
-beam_radius = 1e-3
-focus_depth = 2e-3
-FDFD_depth = 10e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
+beam_radius = 0.5e-3
+focus_depth = 1e-3
+FDFD_depth = 5e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
-xy_cells = 512    # Keep this a power of 2 for efficient FFT
-dz = 50e-9
-dx = dy = 10*beam_radius/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+dz = 10e-9
+dx = dy = 20*(2*beam_radius)/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
-ScalingFactor = 1   # Scale the output of Debye-Wolf calculation
-absorption_padding = 2*dx # Thickness of absorbing boundary
-Absorption_strength = 0.1   
+ScalingFactor = 0.5   # Scale the output of Debye-Wolf calculation
+absorption_padding = 6*dx # Thickness of absorbing boundary
+Absorption_strength = 0.25
 n_h = 1.33  # Homogenous part of refractive index
 
 
@@ -52,7 +52,7 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-unique_layers=int(FDFD_depth/(5*dz)) 
+unique_layers=int(FDFD_depth/(dz)) 
 print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6,xy_cells*dx*10**6,focus_depth*10**6))
 
 # Calculate fields at FDFD_depth
@@ -87,7 +87,10 @@ Uz[:,:,1] = Ez2
 Az[:,:,1] = FFT2(Uz[:,:,1])
 
 current_step = 2
-Uz,Az, Field_snapshots, current_step = propagate_Fourier(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
+Uz,Az, Field_snapshots, current_step = propagate(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
+
+# Stuff at focus
+Exf,Eyf,Ezf,_ = TightFocus(seed,dx_seed,wavelength,n_h,focus_depth,0,ScalingFactor)
 
 fig, ax = plt.subplots(3, 3)
 axis = 10**6*dx_seed*indices
@@ -97,6 +100,9 @@ ax[0][0].title.set_text('Seed Intensity')
 axis = 10**6*dx*indices
 ax[0][1].pcolormesh(axis,axis,np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)
 ax[0][1].title.set_text('Intensity from Debye-Wolf calculation')
+ax[0][2].pcolormesh(axis,axis,np.abs(Ezf))
+ax[0][2].title.set_text('Ez at Focus from Debye-Wolf calculation')
+
 ax[1][0].pcolormesh(axis,axis,np.abs(Ex))
 ax[1][0].title.set_text("Debye-Wolf Ex")
 ax[1][1].pcolormesh(axis,axis,np.abs(Ey))
@@ -108,7 +114,7 @@ ax[1][2].title.set_text("Debye-Wolf Ez")
 ax[2][0].title.set_text("Ex")
 #ax[2][1].pcolormesh(axis,axis,np.abs(Ey))
 ax[2][1].title.set_text("Ey")
-ax[2][2].pcolormesh(axis,axis,np.abs(Uz[:,:,2]))
+ax[2][2].pcolormesh(axis,axis,np.abs(Uz[:,:,1]))
 ax[2][2].title.set_text("Ez")
 
 plt.show()

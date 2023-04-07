@@ -65,14 +65,14 @@ def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_dept
         # Some scaling issues remain
         #A[:,:,i] = dz**2*(4*np.pi**2*(fxfx**2+fyfy**2))*A[:,:,i-1] - dz**2*FFT2(k**2*U[:,:,i-1],dx)[0] + 2*A[:,:,i-1] - A[:,:,i-2]
         A[:,:,2] = dz**2*(4*np.pi**2*(fxfx**2+fyfy**2))*A[:,:,1] - dz**2*FFT2(k[:,:,i%unique_layers]**2*U[:,:,1]) + 2*A[:,:,1] - A[:,:,0]
-        A[:,:,2] = A[:,:,2]*((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
+        #A[:,:,2] = A[:,:,2]*((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
+        A[:,:,2][(fxfx**2+fyfy**2)>(1/wavelength)**2] = 0
         
         # Making a paraxial approximation here. i.e., assuming k_z ~ k. This is not a big deal since absorption_profile is zero everywhere except
         # the boundary of the simulation volume in real space anyway.
         U[:,:,2] = iFFT2(A[:,:,2]) * np.exp(1j*k0*dz*absorption_profile)
         A[:,:,2] = FFT2(U[:,:,2])
-                        
-
+        
         A[:,:,0] = A[:,:,1]
         A[:,:,1] = A[:,:,2]
         U[:,:,0] = U[:,:,1]

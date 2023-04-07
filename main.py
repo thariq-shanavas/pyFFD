@@ -18,7 +18,7 @@ start_time = time.time()
 
 # Simulation parameters
 wavelength = 500e-9
-dz = 50e-9     
+dz = 10e-9     
 dx = dy = wavelength/6 # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
@@ -27,12 +27,12 @@ xy_cells = 1024     # Keep this a power of 2 for efficient FFT
 absorption_padding = 2*dx # Thickness of absorbing boundary
 Absorption_strength = 0.1   
 
-beam_radius = 13.33e-6
-focal_length = 100e-6/1.33 # Focal length of lens used to focus
-Total_length = 100e-6
+beam_radius = 15e-6
+focal_length = 30e-6/1.33 # Focal length of lens used to focus
+Total_length = 30e-6
 
 
-beam_type = 'LG' # 'HG, 'LG', 'G'
+beam_type = 'G' # 'HG, 'LG', 'G'
 use_picked_index = True
 save_index = False
 l = 1  # Topological charge for LG beam
