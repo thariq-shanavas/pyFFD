@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 #import seaborn as sns
 from DebyeWolfIntegral import TightFocus
+from FieldPlots import VortexNull
 
 
 start_time = time.time()
@@ -22,7 +23,7 @@ if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
     ValueError("Beam is larger than simulation cross section")
 
-beam_type = 'LG' # 'HG, 'LG', 'G'
+beam_type = 'G' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
@@ -33,12 +34,12 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-z_scan_depths = 30e-8*np.linspace(-50,49,100,dtype=np.int_)
+z_scan_depths = 60e-8*np.linspace(-50,49,100,dtype=np.int_)
 z_cross_section_profile_x = np.zeros((100,xy_cells))
 z_cross_section_profile_y = np.zeros((100,xy_cells))
 
 for i in range(100):
-    Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,z_scan_depths[i],0.1/2.66)
+    Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,z_scan_depths[i],0.8/2.66)
     z_cross_section_profile_y[i,:] = (np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)[:,512]
     z_cross_section_profile_x[i,:] = (np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)[512,:]
 
@@ -71,5 +72,6 @@ Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,0,0.1/2.6
 plt.pcolormesh(axis,axis,np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)
 plt.gca().set_aspect('equal')
 plt.show()
+VortexNull(np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2, dx_TightFocus, beam_type, cross_sections = 19, num_samples = 1000)
 
 print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
