@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 #import seaborn as sns
 from DebyeWolfIntegral import TightFocus
+from FriendlyFourierTransform import FFT2, iFFT2
+from scipy.interpolate import RegularGridInterpolator
 
 
 start_time = time.time()
@@ -37,16 +39,32 @@ z_scan_depths = 30e-8*np.linspace(-50,49,100,dtype=np.int_)
 z_cross_section_profile_x = np.zeros((100,xy_cells))
 z_cross_section_profile_y = np.zeros((100,xy_cells))
 
-for i in range(100):
-    Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,z_scan_depths[i],0.1/2.66)
-    z_cross_section_profile_y[i,:] = (np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)[:,512]
-    z_cross_section_profile_x[i,:] = (np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)[512,:]
-
+dk = 2*np.pi/(dx*xy_cells)
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-axis = 10**6*dx_TightFocus*indices
-plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_x)
+kxkx, kyky = np.meshgrid(dk*indices,dk*indices)
+f = 1/(dx*xy_cells)*indices
+k = 2*np.pi*n_h/wavelength
+k0 = 2*np.pi/wavelength
+
+steps = 100
+dx_new = 1.5e-6/xy_cells
+
+for i in range(100):
+    z = focus_depth - z_scan_depths[i]
+    H = np.exp(1j*z*np.emath.sqrt((k)**2-kxkx**2-kyky**2))
+    Ex = iFFT2(FFT2(seed)*H)        
+    interpEx = RegularGridInterpolator((dx*indices,dx*indices), Ex, bounds_error = False, fill_value = 0)
+    xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
+    Ex = interpEx((xx_new,yy_new))
+    
+    z_cross_section_profile_y[i,:] = (np.abs(Ex)**2)[:,512]
+    z_cross_section_profile_x[i,:] = (np.abs(Ex)**2)[512,:]
+
+
+axis = 10**6*dx_new*indices
+plt.pcolormesh(axis,10**6*z_scan_depths,z_cross_section_profile_x)
 plt.show()
-plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_y)
+plt.pcolormesh(axis,10**6*z_scan_depths,z_cross_section_profile_y)
 '''
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
 # xx, yy = np.meshgrid(dx*indices,dx*indices)
@@ -67,8 +85,13 @@ ax[1][2].pcolormesh(axis,axis,np.abs(Ez))
 ax[1][2].title.set_text("Ez")
 '''
 plt.show()
-Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,0,0.1/2.66)
-plt.pcolormesh(axis,axis,np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)
+z = focus_depth
+H = np.exp(1j*z*np.emath.sqrt((k)**2-kxkx**2-kyky**2))
+Ex = iFFT2(FFT2(seed)*H)        
+interpEx = RegularGridInterpolator((dx*indices,dx*indices), Ex, bounds_error = False, fill_value = 0)
+xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
+Ex = interpEx((xx_new,yy_new))
+plt.pcolormesh(axis,axis,np.abs(Ex)**2)
 plt.gca().set_aspect('equal')
 plt.show()
 
