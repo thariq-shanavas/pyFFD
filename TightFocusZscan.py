@@ -14,10 +14,10 @@ start_time = time.time()
 wavelength = 500e-9
 dz = 50e-9
 n_h = 1  # Homogenous part of refractive index
-xy_cells = 512    # Keep this a power of 2 for efficient FFT
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
 
 beam_radius = 100e-6
-focus_depth = 1e-3
+focus_depth = 10e-3
 dx = dy = 10*2*beam_radius/(xy_cells)
 
 if 2*beam_radius > 0.5*dx*xy_cells:
@@ -35,12 +35,13 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-z_scan_depths = 60e-8*np.linspace(-50,49,100,dtype=np.int_)
+#z_scan_depths = 60e-8*np.linspace(-50,49,100,dtype=np.int_)
+z_scan_depths = focus_depth/100*np.linspace(0,99,100,dtype=np.int_)
 z_cross_section_profile_x = np.zeros((100,xy_cells))
 z_cross_section_profile_y = np.zeros((100,xy_cells))
 
 for i in range(100):
-    Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,z_scan_depths[i],0.05)
+    Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,z_scan_depths[i],60e-6/xy_cells)
     z_cross_section_profile_y[i,:] = (np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)[:,int(xy_cells/2)]
     z_cross_section_profile_x[i,:] = (np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)[int(xy_cells/2),:]
 
@@ -69,7 +70,7 @@ ax[1][2].pcolormesh(axis,axis,np.abs(Ez))
 ax[1][2].title.set_text("Ez")
 '''
 plt.show()
-Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,0,0.8/2.66)
+Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,0,60e-6/xy_cells)
 axis = 10**6*dx_TightFocus*indices
 plt.pcolormesh(axis,axis,np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)
 plt.gca().set_aspect('equal')

@@ -1,8 +1,9 @@
 import numpy as np
 from FriendlyFourierTransform import FFT2
 from scipy.interpolate import RegularGridInterpolator
+import warnings
 
-def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,ScalingFactor=1):
+def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,target_dx=25e-9):
     '''
     Provides the 3D field from focusing a polarized input field through a thick lens
     Axis of the lens is along z. Input polarization is assumed to be along x direction.
@@ -112,7 +113,10 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
 
     # Scaling the discretization in space
     
-    
+    ScalingFactor = target_dx/out_dx
+    if ScalingFactor <0.1:
+        warnings.warn('High output interpolation: Increase xy_cells or dx')
+
     interpEx = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ex, bounds_error = False, fill_value = 0)
     interpEy = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ey, bounds_error = False, fill_value = 0)
     interpEz = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ez, bounds_error = False, fill_value = 0)

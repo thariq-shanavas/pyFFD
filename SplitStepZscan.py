@@ -37,7 +37,10 @@ else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
 
-z_scan_depths = 60e-8*np.linspace(-50,49,100,dtype=np.int_)
+
+#z_scan_depths = 60e-8*np.linspace(-50,49,100,dtype=np.int_)
+z_scan_depths = focus_depth/100*np.linspace(0,99,100,dtype=np.int_)
+
 z_cross_section_profile_x = np.zeros((100,xy_cells))
 z_cross_section_profile_y = np.zeros((100,xy_cells))
 
@@ -50,7 +53,9 @@ k0 = 2*np.pi/wavelength
 xx, yy = np.meshgrid(dx*indices,dx*indices,indexing='ij')
 seed = seed*np.exp(1j*k0*(-(xx**2+yy**2)/(2*focus_depth/n_h)))
 steps = 100
-dx_new = 12e-6/xy_cells
+dx_new = 60e-6/xy_cells
+#dx_new = dx
+
 mp = int(xy_cells/2)
 sns.heatmap(np.abs(seed))
 plt.show()
@@ -63,6 +68,7 @@ for i in range(100):
     Ex = interpEx((xx_new,yy_new))
     
     z_cross_section_profile_y[i,:] = (np.abs(Ex)**2)[:,mp]
+    #z_cross_section_profile_y[i,:] = z_cross_section_profile_y[i,:]/np.max(z_cross_section_profile_y[i,:])
     z_cross_section_profile_x[i,:] = (np.abs(Ex)**2)[mp,:]
 
 
@@ -95,13 +101,10 @@ plt.show()
 z = focus_depth
 H = np.exp(1j*z*np.emath.sqrt((k)**2-kxkx**2-kyky**2))
 Ex = iFFT2(FFT2(seed)*H)        
-#interpEx = RegularGridInterpolator((dx*indices,dx*indices), Ex, bounds_error = False, fill_value = 0)
-#xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
-#Ex = interpEx((xx_new,yy_new))
 axis = 10**6*dx*indices
 plt.pcolormesh(axis,axis,np.abs(Ex)**2)
 plt.gca().set_aspect('equal')
 plt.show()
 
-VortexNull(np.abs(Ex)**2, dx_new, beam_type, cross_sections = 19, num_samples = 1000)
+VortexNull(np.abs(Ex)**2, dx, beam_type, cross_sections = 19, num_samples = 1000)
 print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
