@@ -1,3 +1,4 @@
+# Split-step z-scan
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -13,12 +14,12 @@ start_time = time.time()
 # Simulation parameters
 wavelength = 500e-9
 dz = 50e-9
-n_h = 1.518  # Homogenous part of refractive index
-xy_cells = 2048    # Keep this a power of 2 for efficient FFT
+n_h = 1  # Homogenous part of refractive index
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
 
 beam_radius = 100e-6
-focus_depth = 1e-3
-dx = dy = 2*2*beam_radius/(xy_cells)
+focus_depth = 10e-3
+dx = dy = 2.5*2*beam_radius/(xy_cells)
 
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
@@ -94,9 +95,10 @@ plt.show()
 z = focus_depth
 H = np.exp(1j*z*np.emath.sqrt((k)**2-kxkx**2-kyky**2))
 Ex = iFFT2(FFT2(seed)*H)        
-interpEx = RegularGridInterpolator((dx*indices,dx*indices), Ex, bounds_error = False, fill_value = 0)
-xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
-Ex = interpEx((xx_new,yy_new))
+#interpEx = RegularGridInterpolator((dx*indices,dx*indices), Ex, bounds_error = False, fill_value = 0)
+#xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
+#Ex = interpEx((xx_new,yy_new))
+axis = 10**6*dx*indices
 plt.pcolormesh(axis,axis,np.abs(Ex)**2)
 plt.gca().set_aspect('equal')
 plt.show()

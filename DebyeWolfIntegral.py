@@ -98,11 +98,13 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
     # sin(theta_max) is related to the NA of the lens as NA/index
     # Therefore kx is discretized as (d kx) = (2.k.{NA/n_homogenous})/xy_cells
 
-    d_kx = 2*k*NA/(n_homogenous*xy_cells)       
+    d_kx = 2*k*NA/(n_homogenous*xy_cells)       # This is probably wrong by a factor of 2 pi. See below.
     
     # After the FFT, the output space is descretized as 1/(d_kx*xy_cells) = wavelength/(4*pi*NA)
     # Note that this is not really the NA of the lens, rather, related to the max. angle subtended by the input plane at focus.
-    out_dx = wavelength/(4*np.pi*NA) 
+    # Actual simulation suggests that the output dx is actually wavelength/(2*NA) I'm not sure how I'm missing a factor of 2.pi
+    
+    out_dx = wavelength/(2*NA) 
 
     Ex = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz)
     Ey = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz)
