@@ -20,6 +20,7 @@ def PlotSnapshots(Field_snapshots, imaging_depth):
 
 def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, filter_sigma = 1):
     
+    # Important: This function takes field intensity, not E-field
     # TODO: What is an appropriate interpolation function to use?
     # Takes n radial cross sections at equal angles to find the average radial profile. n = cross_sections.
     # Make cross_sections odd to avoid duplicate cross sections.
@@ -41,7 +42,7 @@ def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, fi
         midpoint = int(xy_cells/2)
         beam_cross_section = Field[midpoint,:]
         tmp_index = int(xy_cells/2)
-        while beam_cross_section[tmp_index]>beam_cross_section[midpoint]/2.71:
+        while beam_cross_section[tmp_index]>beam_cross_section[midpoint]/2.718**2:
             tmp_index = tmp_index+1
         beam_radius = dx*(tmp_index-midpoint)
         print('Beam radius is %1.1f nm' %(beam_radius*10**9))
