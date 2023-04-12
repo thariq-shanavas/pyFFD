@@ -115,7 +115,8 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
     
     ScalingFactor = target_dx/out_dx
     if ScalingFactor <0.1:
-        warnings.warn('High output interpolation: Increase xy_cells or dx')
+        wrn = 'High output interpolation factor ('+str(1/ScalingFactor)+'): Increase xy_cells or dx'
+        warnings.warn(wrn)
 
     interpEx = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ex, bounds_error = False, fill_value = 0)
     interpEy = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ey, bounds_error = False, fill_value = 0)
