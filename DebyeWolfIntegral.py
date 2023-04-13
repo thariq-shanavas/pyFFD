@@ -111,8 +111,13 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
     Ey = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz)
     Ez = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Az/kz)
 
+    # Normalization
+    n0 = np.sum(np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)*out_dx**2
+    Ex = Ex/n0
+    Ey = Ey/n0
+    Ez = Ez/n0
+
     # Scaling the discretization in space
-    
     ScalingFactor = target_dx/out_dx
     if ScalingFactor <0.1:
         wrn = 'High output interpolation factor ('+str(1/ScalingFactor)+'): Increase xy_cells or dx'

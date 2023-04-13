@@ -91,7 +91,7 @@ def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_dept
     return U, A, Field_snapshots, current_step
     
 
-def propagate_Fourier(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_depth_indices, absorption_padding, Absorption_strength, wavelength):
+def propagate_Fourier(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = False):
     #(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_depth_indices):
     
     # Inputs
@@ -135,6 +135,10 @@ def propagate_Fourier(U, A, distance, current_step, dx, dz, xy_cells, index,imag
     H = np.exp(1j*dz*np.emath.sqrt((k)**2-kxkx**2-kyky**2))
     steps = int(distance/dz)
     fxfx,fyfy = np.meshgrid(f,f)
+    if suppress_evanescent:
+        mask = ((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
+    else:
+        mask = 1
     Field_snapshots = np.zeros((xy_cells,xy_cells,1+np.size(imaging_depth_indices)),dtype=np.complex64)
     Field_snapshots_index = 1   # First snapshot is U[:,:,0]
     
@@ -148,7 +152,7 @@ def propagate_Fourier(U, A, distance, current_step, dx, dz, xy_cells, index,imag
         # i  : z+dz
         # i-1: z
         # i-2: z-dz
-        U[:,:,1] = iFFT2(FFT2(U[:,:,0]*np.exp(1j*k0*(n_ih[:,:,i%unique_layers]+absorption_profile)*dz))*H)        
+        U[:,:,1] = iFFT2(FFT2(mask*U[:,:,0]*np.exp(1j*k0*(n_ih[:,:,i%unique_layers]+absorption_profile)*dz))*H)        
         U[:,:,0] = U[:,:,1]
         current_step = current_step + 1
     
