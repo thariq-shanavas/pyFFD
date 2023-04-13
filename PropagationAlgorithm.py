@@ -4,7 +4,7 @@
 import numpy as np
 from FriendlyFourierTransform import FFT2, iFFT2
 
-def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_depth_indices, absorption_padding, Absorption_strength, wavelength):
+def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True):
     
     # Suppressing the evanescent field to ensure stability of the algorithm. Unclear what the consequences are.
     # Inputs
@@ -56,7 +56,8 @@ def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_dept
     xx, yy = np.meshgrid(dx*indices,dx*indices)
     absorption_profile = 1j*Absorption_strength*(np.exp((np.abs(xx)-xy_range)/absorption_padding) + np.exp((np.abs(yy)-xy_range)/absorption_padding))
     unique_layers = np.shape(index)[2]
-    
+    absorption_profile_real_space = np.exp(1j*k0*dz*absorption_profile)
+
     for i in range(current_step,current_step+steps):
         # i  : z+dz
         # i-1: z
@@ -66,11 +67,12 @@ def propagate(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_dept
         #A[:,:,i] = dz**2*(4*np.pi**2*(fxfx**2+fyfy**2))*A[:,:,i-1] - dz**2*FFT2(k**2*U[:,:,i-1],dx)[0] + 2*A[:,:,i-1] - A[:,:,i-2]
         A[:,:,2] = dz**2*(4*np.pi**2*(fxfx**2+fyfy**2))*A[:,:,1] - dz**2*FFT2(k[:,:,i%unique_layers]**2*U[:,:,1]) + 2*A[:,:,1] - A[:,:,0]
         #A[:,:,2] = A[:,:,2]*((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
-        A[:,:,2][(fxfx**2+fyfy**2)>(1/wavelength)**2] = 0
+        if suppress_evanescent:
+            A[:,:,2][(fxfx**2+fyfy**2)>(1/wavelength)**2] = 0
         
         # Making a paraxial approximation here. i.e., assuming k_z ~ k. This is not a big deal since absorption_profile is zero everywhere except
         # the boundary of the simulation volume in real space anyway.
-        U[:,:,2] = iFFT2(A[:,:,2]) * np.exp(1j*k0*dz*absorption_profile)
+        U[:,:,2] = iFFT2(A[:,:,2]) * absorption_profile_real_space
         A[:,:,2] = FFT2(U[:,:,2])
         
         A[:,:,0] = A[:,:,1]
@@ -152,7 +154,7 @@ def propagate_Fourier(U, A, distance, current_step, dx, dz, xy_cells, index,imag
         # i  : z+dz
         # i-1: z
         # i-2: z-dz
-        U[:,:,1] = iFFT2(FFT2(mask*U[:,:,0]*np.exp(1j*k0*(n_ih[:,:,i%unique_layers]+absorption_profile)*dz))*H)        
+        U[:,:,1] = iFFT2(mask*FFT2(U[:,:,0]*np.exp(1j*k0*(n_ih[:,:,i%unique_layers]+absorption_profile)*dz))*H)        
         U[:,:,0] = U[:,:,1]
         current_step = current_step + 1
     
@@ -168,7 +170,7 @@ def propagate_Fourier(U, A, distance, current_step, dx, dz, xy_cells, index,imag
 
 
 
-def propagate_FiniteDifference(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_depth_indices, absorption_padding, Absorption_strength, wavelength):
+def propagate_FiniteDifference(U, A, distance, current_step, dx, dz, xy_cells, index,imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = False):
     
     # This has the same problem: If dx < lambda/sqrt(2), the field blows up.
     # Inputs
@@ -224,12 +226,25 @@ def propagate_FiniteDifference(U, A, distance, current_step, dx, dz, xy_cells, i
     unique_layers = np.shape(index)[2]
     dz_dx = dz/dx
     
+    # Masking evanescent fields
+    
+    f = 1/(dx*xy_cells)*indices
+    fxfx,fyfy = np.meshgrid(f,f)
+    if suppress_evanescent:
+        mask = ((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
+    else:
+        mask = 1
+
     for i in range(current_step,current_step+steps):
         # I'm not sure whether ax=0 or ax=1 is x derivative, but we're adding the two anyway, so...
         d2Udx2 = (np.roll(U[:,:,1],1,axis=0)+np.roll(U[:,:,1],-1,axis=0)-2*U[:,:,1])
         d2Udy2 = (np.roll(U[:,:,1],1,axis=1)+np.roll(U[:,:,1],-1,axis=1)-2*U[:,:,1])
         #print(current_step)
         U[:,:,2] = 2*U[:,:,1]-U[:,:,0]-(dz_dx**2)*(d2Udx2+d2Udy2)-(dz*k0*index[:,:,i%unique_layers])**2*U[:,:,1]
+        
+        if suppress_evanescent:
+            U[:,:,2] =  iFFT2(mask*FFT2(U[:,:,2]))
+
         U[:,:,0] = U[:,:,1]
         U[:,:,1] = U[:,:,2]
         

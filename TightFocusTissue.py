@@ -94,7 +94,7 @@ Uz[:,:,1] = Ez2
 Az[:,:,1] = FFT2(Uz[:,:,1])
 
 current_step = 2
-Uz,Az, _, _ = propagate_Fourier(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
+Uz,Az, _, _ = propagate_Fourier(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True)
 
 Uy[:,:,0] = Ey
 Ay[:,:,0] = FFT2(Uz[:,:,0])
@@ -103,7 +103,7 @@ Uy[:,:,1] = Ey2
 Ay[:,:,1] = FFT2(Uz[:,:,1])
 
 current_step = 2
-Uy,Ay, _, _ = propagate_Fourier(Uy, Ay,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
+Uy,Ay, _, _ = propagate_Fourier(Uy, Ay,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True)
 
 Ux[:,:,0] = Ex
 Ax[:,:,0] = FFT2(Uz[:,:,0])
@@ -112,7 +112,7 @@ Ux[:,:,1] = Ex2
 Ax[:,:,1] = FFT2(Uz[:,:,1])
 
 current_step = 2
-Ux,Ax, _, _ = propagate_Fourier(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength)
+Ux,Ax, _, _ = propagate_Fourier(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True)
 
 
 # Stuff at focus
