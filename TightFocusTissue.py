@@ -2,7 +2,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from FriendlyFourierTransform import FFT2, iFFT2
-from PropagationAlgorithm import propagate, propagate_Fourier
+from PropagationAlgorithm import propagate, propagate_Fourier, propagate_FiniteDifference
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 from FieldPlots import PlotSnapshots, VortexNull
 from GenerateRandomTissue import RandomTissue
@@ -13,6 +13,8 @@ start_time = time.time()
 plt.rcParams['figure.dpi']= 300
 plt.rcParams.update({'font.size': 4})
 plt.rcParams['pcolor.shading'] = 'auto'
+propagation_algorithm = propagate_FiniteDifference
+suppress_evanescent = True
 
 # Simulation parameters
 beam_radius = 100e-6
@@ -27,7 +29,7 @@ dx = dy = 10*(2*beam_radius)/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)
 
 absorption_padding = 3*dx # Thickness of absorbing boundary
 Absorption_strength = 0.25
-n_h = 1.33  # Homogenous part of refractive index
+n_h = 1  # Homogenous part of refractive index
 
 expected_spot_size = 15e-6  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
 target_dx = 3*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output
@@ -44,7 +46,7 @@ if dz > (np.pi/10)**2*ls :
 
 
 
-beam_type = 'G' # 'HG, 'LG', 'G'
+beam_type = 'LG' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
@@ -94,7 +96,7 @@ Uz[:,:,1] = Ez2
 Az[:,:,1] = FFT2(Uz[:,:,1])
 
 current_step = 2
-Uz,Az, _, _ = propagate_Fourier(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True)
+Uz,Az, _, _ = propagation_algorithm(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
 
 Uy[:,:,0] = Ey
 Ay[:,:,0] = FFT2(Uz[:,:,0])
@@ -103,7 +105,7 @@ Uy[:,:,1] = Ey2
 Ay[:,:,1] = FFT2(Uz[:,:,1])
 
 current_step = 2
-Uy,Ay, _, _ = propagate_Fourier(Uy, Ay,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True)
+Uy,Ay, _, _ = propagation_algorithm(Uy, Ay,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
 
 Ux[:,:,0] = Ex
 Ax[:,:,0] = FFT2(Uz[:,:,0])
@@ -112,7 +114,7 @@ Ux[:,:,1] = Ex2
 Ax[:,:,1] = FFT2(Uz[:,:,1])
 
 current_step = 2
-Ux,Ax, _, _ = propagate_Fourier(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True)
+Ux,Ax, _, _ = propagation_algorithm(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
 
 
 # Stuff at focus
