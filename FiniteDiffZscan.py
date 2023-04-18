@@ -8,6 +8,7 @@ from DebyeWolfIntegral import TightFocus
 from FieldPlots import VortexNull
 from PropagationAlgorithm import propagate_FiniteDifference
 from FriendlyFourierTransform import FFT2, iFFT2
+from scipy.interpolate import RegularGridInterpolator
 
 start_time = time.time()
 
@@ -15,16 +16,16 @@ start_time = time.time()
 wavelength = 500e-9
 dz = 50e-9
 n_h = 1  # Homogenous part of refractive index
-xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+xy_cells = 512    # Keep this a power of 2 for efficient FFT
 unique_layers = 20
 n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
 
 
-beam_radius = 100e-6
+beam_radius = 150e-6
 focus_depth = 1e-3
-FD_dist = 1e-6
+FD_dist = 50e-6
 dx = dy = 10*2*beam_radius/(xy_cells)
-expected_spot_size = 20e-6
+expected_spot_size = 15e-6
 steps = 4*int(FD_dist/(4*dz))   # Make sure its a multiple of 4
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
@@ -45,6 +46,8 @@ else:
 
 z_cross_section_profile_x = np.zeros((steps,xy_cells))
 z_cross_section_profile_y = np.zeros((steps,xy_cells))
+z_cross_section_profile_x_Fourier = np.zeros((100,xy_cells))
+z_cross_section_profile_y_Fourier = np.zeros((100,xy_cells))
 
 sns.heatmap(np.abs(seed))
 plt.show()
@@ -79,13 +82,31 @@ for i in range(steps):
     if i == steps/2:
         Exf = U[:,:,2]
 
+k = 2*np.pi*n_h/wavelength
+dk = 2*np.pi/(dx*xy_cells)
+kxkx, kyky = np.meshgrid(dk*indices,dk*indices)
+z_scan_depths = FD_dist/100*np.linspace(0,99,100,dtype=np.int_)
+
+for i in range(100):
+    z = z_scan_depths[i]
+    H = np.exp(1j*z*np.emath.sqrt((k)**2-kxkx**2-kyky**2))
+    Ex = iFFT2(FFT2(Ex2)*H)        
+
+    z_cross_section_profile_y_Fourier[i,:] = (np.abs(Ex)**2)[:,int(xy_cells/2)]
+    z_cross_section_profile_x_Fourier[i,:] = (np.abs(Ex)**2)[int(xy_cells/2),:]
+
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
 axis = 10**6*dx_TightFocus*indices
 z_scan_depths = dz*np.linspace(-steps/4,3*steps/4-1,steps,dtype=np.int_)
 plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_x)
 plt.show()
-plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_y)
-
+#plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_y)
+#plt.show()
+z_scan_depths = FD_dist/100*np.linspace(-25,74,100,dtype=np.int_)
+plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_x_Fourier)
+plt.show()
+#plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_y_Fourier)
+#plt.show()
 '''
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
 # xx, yy = np.meshgrid(dx*indices,dx*indices)
@@ -106,11 +127,11 @@ ax[1][2].pcolormesh(axis,axis,np.abs(Ez))
 ax[1][2].title.set_text("Ez")
 '''
 
-plt.show()
+'''
 axis = 10**6*dx_TightFocus*indices
 plt.pcolormesh(axis,axis,np.abs(Exf)**2)
 plt.gca().set_aspect('equal')
 plt.show()
 VortexNull(np.abs(Exf)**2, dx_TightFocus, beam_type, cross_sections = 19, num_samples = 1000)
-
+'''
 print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
