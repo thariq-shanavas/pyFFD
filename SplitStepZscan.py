@@ -19,7 +19,7 @@ xy_cells = 1024    # Keep this a power of 2 for efficient FFT
 
 beam_radius = 100e-6
 focus_depth = 10e-3
-dx = dy = 2.5*2*beam_radius/(xy_cells)
+dx = dy = 3*2*beam_radius/(xy_cells)
 
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.

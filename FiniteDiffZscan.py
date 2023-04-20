@@ -14,19 +14,21 @@ start_time = time.time()
 
 # Simulation parameters
 wavelength = 500e-9
-dz = 50e-9
 n_h = 1  # Homogenous part of refractive index
 xy_cells = 512    # Keep this a power of 2 for efficient FFT
 unique_layers = 20
 n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
 
+start_dist = -100e-6
+stop_dist = 10e-6
+dz = 50e-9
 
-beam_radius = 150e-6
+beam_radius = 200e-6
 focus_depth = 1e-3
-FD_dist = 50e-6
+FD_dist = stop_dist-start_dist
 dx = dy = 10*2*beam_radius/(xy_cells)
-expected_spot_size = 15e-6
-steps = 4*int(FD_dist/(4*dz))   # Make sure its a multiple of 4
+expected_spot_size = 10e-6
+steps = int(FD_dist/dz)   # Make sure its a multiple of 4
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
     ValueError("Beam is larger than simulation cross section")
@@ -51,8 +53,8 @@ z_cross_section_profile_y_Fourier = np.zeros((100,xy_cells))
 
 sns.heatmap(np.abs(seed))
 plt.show()
-Ex1,Ey1,Ez1,_ = TightFocus(seed,dx,wavelength,n_h,focus_depth,FD_dist/4,3*expected_spot_size/xy_cells)
-Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,FD_dist/4-dz,3*expected_spot_size/xy_cells)
+Ex1,Ey1,Ez1,_ = TightFocus(seed,dx,wavelength,n_h,focus_depth,-start_dist,3*expected_spot_size/xy_cells)
+Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,-start_dist-dz,3*expected_spot_size/xy_cells)
 sns.heatmap(np.abs(Ex1))
 plt.show()
 dx = dx_TightFocus
@@ -79,8 +81,6 @@ for i in range(steps):
 
     z_cross_section_profile_y[i,:] = (np.abs(U[:,:,2])**2)[:,int(xy_cells/2)]
     z_cross_section_profile_x[i,:] = (np.abs(U[:,:,2])**2)[int(xy_cells/2),:]
-    if i == steps/2:
-        Exf = U[:,:,2]
 
 k = 2*np.pi*n_h/wavelength
 dk = 2*np.pi/(dx*xy_cells)
@@ -97,12 +97,12 @@ for i in range(100):
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
 axis = 10**6*dx_TightFocus*indices
-z_scan_depths = dz*np.linspace(-steps/4,3*steps/4-1,steps,dtype=np.int_)
+z_scan_depths = np.linspace(start_dist,stop_dist,steps)
 plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_x)
 plt.show()
 #plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_y)
 #plt.show()
-z_scan_depths = FD_dist/100*np.linspace(-25,74,100,dtype=np.int_)
+z_scan_depths = np.linspace(start_dist,stop_dist,100)
 plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_x_Fourier)
 plt.show()
 #plt.pcolormesh(axis,z_scan_depths,z_cross_section_profile_y_Fourier)

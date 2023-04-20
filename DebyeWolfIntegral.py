@@ -57,10 +57,13 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
     k = 2*np.pi/wavelength*n_homogenous
-    NA = n_homogenous*np.sin(np.arctan((dx*xy_cells/2)/(FocusDepth)))     # Obviously not the actual NA, but this is used for mapping k-space to real space later
-
+    R = 1.4143*(xy_cells/2)*dx
+    NA = n_homogenous*np.sin(np.arctan(R/FocusDepth))     # Obviously not the actual NA, but this is used for mapping k-space to real space later
+    NA = n_homogenous*np.sin(np.arctan((xy_cells/2)*dx/FocusDepth))     # Obviously not the actual NA, but this is used for mapping k-space to real space later
     # Angles in the input plane, measured from the focus
-    theta = np.arctan(np.sqrt(xx**2+yy**2)/FocusDepth)
+    #theta = np.arctan(np.sqrt(xx**2+yy**2)/FocusDepth)
+    
+    theta = np.arcsin((np.sqrt(xx**2+yy**2)/R)*NA/n_homogenous)
     phi = np.arctan2(yy,xx)
 
     # Input fields in cylindrical coordinates

@@ -14,12 +14,12 @@ start_time = time.time()
 wavelength = 500e-9
 dz = 50e-9
 n_h = 1  # Homogenous part of refractive index
-xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+xy_cells = 256    # Keep this a power of 2 for efficient FFT
 
-beam_radius = 100e-6
-focus_depth = 10e-3
-dx = dy = 10*2*beam_radius/(xy_cells)
-expected_spot_size = 30e-6
+beam_radius = 300e-6
+focus_depth = 1e-3
+dx = dy = 5*2*beam_radius/(xy_cells)
+expected_spot_size = 20e-6
 
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
@@ -37,7 +37,7 @@ else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
 #z_scan_depths = 60e-8*np.linspace(-50,49,100,dtype=np.int_)
-z_scan_depths = focus_depth/100*np.linspace(0,99,100,dtype=np.int_)
+z_scan_depths = focus_depth/100*np.linspace(-25,74,100,dtype=np.int_)
 z_cross_section_profile_x = np.zeros((100,xy_cells))
 z_cross_section_profile_y = np.zeros((100,xy_cells))
 
@@ -73,6 +73,7 @@ ax[1][1].title.set_text("Ey")
 ax[1][2].pcolormesh(axis,axis,np.abs(Ez))
 ax[1][2].title.set_text("Ez")
 '''
+
 plt.show()
 Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth,0,3*expected_spot_size/xy_cells)
 axis = 10**6*dx_TightFocus*indices
