@@ -19,15 +19,15 @@ xy_cells = 512    # Keep this a power of 2 for efficient FFT
 unique_layers = 20
 n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
 
-start_dist = -100e-6
-stop_dist = 10e-6
+start_dist = -50e-6
+stop_dist = 20e-6
 dz = 50e-9
 
 beam_radius = 200e-6
 focus_depth = 1e-3
 FD_dist = stop_dist-start_dist
-dx = dy = 10*2*beam_radius/(xy_cells)
-expected_spot_size = 10e-6
+dx = dy = 3*2*beam_radius/(xy_cells)
+expected_spot_size = 30e-6
 steps = int(FD_dist/dz)   # Make sure its a multiple of 4
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
