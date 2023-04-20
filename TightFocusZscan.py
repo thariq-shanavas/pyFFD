@@ -14,12 +14,12 @@ start_time = time.time()
 wavelength = 500e-9
 dz = 50e-9
 n_h = 1  # Homogenous part of refractive index
-xy_cells = 256    # Keep this a power of 2 for efficient FFT
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
 
-beam_radius = 300e-6
-focus_depth = 1e-3
-dx = dy = 5*2*beam_radius/(xy_cells)
-expected_spot_size = 20e-6
+beam_radius = 100e-6
+focus_depth = 10e-3
+dx = dy = 20*2*beam_radius/(xy_cells)
+expected_spot_size = 40e-6
 
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.

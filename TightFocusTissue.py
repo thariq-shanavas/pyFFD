@@ -23,13 +23,13 @@ FDFD_depth = 50e-6 #5e-6       # Debye-Wolf integral to calculate field at focus
 
 wavelength = 500e-9
 xy_cells = 512    # Keep this a power of 2 for efficient FFT
-dz = 80e-9
+dz = 30e-9
 dx = dy = 10*(2*beam_radius)/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
 
 absorption_padding = 3*dx # Thickness of absorbing boundary
 Absorption_strength = 0.25
-n_h = 1  # Homogenous part of refractive index
+n_h = 1.33  # Homogenous part of refractive index
 
 expected_spot_size = 15e-6  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
 target_dx = 3*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output
@@ -39,7 +39,6 @@ ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 
 if 2*beam_radius > 0.5*dx*xy_cells:
-    # Beam diameter greater than half the length of the simulation cross section.
     ValueError("Beam is larger than simulation cross section")
 if dz > (np.pi/10)**2*ls :
     NameError('Step size too large')
@@ -57,7 +56,7 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-unique_layers=50
+unique_layers=int(FDFD_depth/(5*dz))
 print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6,xy_cells*dx*10**6,focus_depth*10**6))
 
 # Calculate fields at FDFD_depth
@@ -87,7 +86,8 @@ Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 Ax = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
 # Uniform index for now TODO: Change this
-n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
+#n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
+n = RandomTissue(xy_cells, Total_steps, wavelength, dx, dz, n_h, ls, g,unique_layers)
 ## For first two steps of Ex
 Uz[:,:,0] = Ez
 Az[:,:,0] = FFT2(Uz[:,:,0])
