@@ -19,16 +19,16 @@ suppress_evanescent = True
 # Simulation parameters
 beam_radius = 100e-6
 focus_depth = 1e-3
-FDFD_depth = 50e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
+FDFD_depth = 10e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
 xy_cells = 512    # Keep this a power of 2 for efficient FFT
-dz = 30e-9
+dz = 5e-9
 dx = dy = 10*(2*beam_radius)/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
 
-absorption_padding = 3*dx # Thickness of absorbing boundary
-Absorption_strength = 0.25
+absorption_padding = dx # Thickness of absorbing boundary
+Absorption_strength = 5
 n_h = 1.33  # Homogenous part of refractive index
 
 expected_spot_size = 15e-6  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
@@ -152,6 +152,8 @@ ax[3][1].title.set_text("Hand off Ey")
 ax[3][2].pcolormesh(axis,axis,np.abs(Ez))
 ax[3][2].title.set_text("Hand off Ez")
 
+Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
+VNull = VortexNull(Focus_Intensity, dx, beam_type, cross_sections = 19, num_samples = 1000)
 
 print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
 plt.show()
