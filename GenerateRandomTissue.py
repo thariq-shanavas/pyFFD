@@ -7,6 +7,7 @@ Created on Sat Nov 12 09:59:59 2022
 
 import numpy as np
 import scipy.signal as signal
+from scipy.stats import norm
 
 def RandomTissue(xy_cells, Total_steps, wavelength, dx, dz, n_h, ls, g, unique_layers):
     # Generates random fluctuations in refractive index following https://doi.org/10.1364/OL.44.004989
@@ -20,13 +21,14 @@ def RandomTissue(xy_cells, Total_steps, wavelength, dx, dz, n_h, ls, g, unique_l
     sigma_x = np.interp(g,g_vs_sigma_x[:,1],g_vs_sigma_x[:,0])*wavelength
     if sigma_x < 1.5*dx:
         print('Warning: fluctuations in tissue index finer than transverse resolution')
-    n_ih = np.zeros((xy_cells,xy_cells,unique_layers),dtype=np.float_)
+    n_ih = np.zeros((xy_cells,xy_cells,unique_layers),dtype=np.float16)
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
-    mask = 1/(2*np.pi*sigma_x**2)*np.exp(-(xx**2+yy**2)/(2*sigma_x**2))
-    mask = mask/np.sum(mask*dx**2)  # Normalization
+    mask = np.exp(-(xx**2+yy**2)/(2*sigma_x**2))
+
     for i in range(0,unique_layers):
-        n_ih[:,:,i] = (wavelength/(2*np.pi*dz))*np.random.normal(scale = sigma_p, size=(xy_cells,xy_cells))
-        n_ih[:,:,i] = signal.fftconvolve(n_ih[:,:,i],mask,mode='same')*dx**2
-    
+        n_ih[:,:,i] = np.random.normal(scale = sigma_p, size=(xy_cells,xy_cells))
+        n_ih[:,:,i] = signal.fftconvolve(n_ih[:,:,i],mask,mode='same')
+
+    n_ih = n_ih*sigma_p/norm.fit(n_ih.flatten())[1]  # Normalizing to make sure phase profile has a std. deviation of sigma_p after the convolution
     return n_h+n_ih
