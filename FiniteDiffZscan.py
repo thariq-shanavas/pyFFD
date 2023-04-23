@@ -4,7 +4,7 @@ import time
 import matplotlib.pyplot as plt
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 import seaborn as sns
-from DebyeWolfIntegral import TightFocus
+from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from FieldPlots import VortexNull
 from PropagationAlgorithm import propagate_FiniteDifference
 from FriendlyFourierTransform import FFT2, iFFT2
@@ -27,7 +27,7 @@ beam_radius = 200e-6
 focus_depth = 1e-3
 FD_dist = stop_dist-start_dist
 dx = dy = 5*beam_radius/(xy_cells)
-expected_spot_size = 10e-6
+expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,np.abs(start_dist))
 steps = int(FD_dist/dz)   # Make sure its a multiple of 4
 if 2*beam_radius > 0.5*dx*xy_cells:
     ValueError("Beam is larger than simulation cross section")
@@ -56,8 +56,8 @@ z_cross_section_profile_y_Fourier = np.zeros((100,xy_cells))
 
 sns.heatmap(np.abs(seed))
 plt.show()
-Ex1,Ey1,Ez1,_ = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,-start_dist,3*expected_spot_size/xy_cells)
-Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,-start_dist-dz,3*expected_spot_size/xy_cells)
+Ex1,Ey1,Ez1,_ = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,-start_dist,6*expected_spot_size/xy_cells)
+Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,-start_dist-dz,6*expected_spot_size/xy_cells)
 sns.heatmap(np.abs(Ex1))
 plt.show()
 dx = dx_TightFocus

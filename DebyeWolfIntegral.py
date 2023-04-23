@@ -136,12 +136,20 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
         wrn = 'High output interpolation factor ('+str(1/ScalingFactor)+'): Increase xy_cells or dx'
         warnings.warn(wrn)
 
-    interpEx = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ex, bounds_error = False, fill_value = 0)
-    interpEy = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ey, bounds_error = False, fill_value = 0)
-    interpEz = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ez, bounds_error = False, fill_value = 0)
+    interpEx = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ex, bounds_error = False, fill_value = 0, method='linear')
+    interpEy = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ey, bounds_error = False, fill_value = 0, method='linear')
+    interpEz = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ez, bounds_error = False, fill_value = 0, method='linear')
     dx_new = out_dx*ScalingFactor
     xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
 
     # TODO: Ex, Ey, Ez needs to be scaled by scalingFactor^2 for the total power integrated in new coordinate system to be 1
     return interpEx((xx_new,yy_new)),interpEy((xx_new,yy_new)),interpEz((xx_new,yy_new)),dx_new
     #return Ex,Ey,Ez, out_dx
+
+def SpotSizeCalculator(FocusDepth,BeamRadius,n_homogenous,wavelength,MeasurementPlane_z):
+    NA = n_homogenous*BeamRadius/np.sqrt(BeamRadius**2+FocusDepth**2)
+    w0 = 0.41*wavelength/NA   # Minimum spot size at focus as radius of Airy disk. 
+    #w0 = wavelength*FocusDepth/(np.pi*BeamRadius)      # Works best for low NA objectives
+    RayleighLength = np.pi*w0**2/wavelength
+
+    return w0*np.sqrt(1+(MeasurementPlane_z/RayleighLength)**2)
