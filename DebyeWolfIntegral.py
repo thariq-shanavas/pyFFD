@@ -3,7 +3,7 @@ from FriendlyFourierTransform import FFT2
 from scipy.interpolate import RegularGridInterpolator
 import warnings
 
-def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,target_dx=25e-9):
+def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,target_dx=25e-9):
     '''
     Provides the 3D field from focusing a polarized input field through a thick lens
     Axis of the lens is along z. Input polarization is assumed to be along x direction.
@@ -53,27 +53,32 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
     For each x,y, calculate three integrals for Ex, Ey, Ez
     '''
     MeasurementPlane_z = -MeasurementPlane_z    # Origin is at focus and z axis is along the direction of propagation. See Fig 1, [1]
-    xy_cells = np.shape(InputField)[0]
+    xy_cells = np.shape(InputField_x)[0]
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
     k = 2*np.pi/wavelength*n_homogenous
     R = (xy_cells/2)*dx
     if R>FocusDepth:
-        ValueError('NA too high! Make the input beam fill the simulation area or increase focus depth!')
-    NA = n_homogenous*np.sin(np.arctan(R/FocusDepth))     # Obviously not the actual NA, but this is used for mapping k-space to real space later
+        wrn = 'The implementation of the Debye-Wolf integral has shown some scaling issues in the very high NA regime. Exercise caution!'
+        warnings.warn(wrn)
+    NA = n_homogenous*(R/np.sqrt(R**2+FocusDepth**2))     # Obviously not the actual NA, but this is used for mapping k-space to real space later
     
+    # Check if debye-Wolf method is valid (Eq. 13.13 [https://doi.org/10.1016/0030-4018(81)90107-3])
+    if not(k*FocusDepth>10*np.pi/(np.sin(0.5*np.arcsin(NA/n_homogenous)))**2):
+        raise ValueError('Debye-Wolf Integral is not valid. See [https://doi.org/10.1016/0030-4018(81)90107-3]')
+
     # Angles in the input plane, measured from the focus
     #theta = np.arctan(np.sqrt(xx**2+yy**2)/FocusDepth)
     
-    theta = np.arcsin((np.sqrt(xx**2+yy**2)/R)*NA/n_homogenous)
+    theta = np.arcsin(np.minimum(0.9999,(np.sqrt(xx**2+yy**2)/R)*NA/n_homogenous))  # theta has to be less than pi/2: There is division by zero in the FFT integrand otherwise.
     phi = np.arctan2(yy,xx)
 
     # Input fields in cylindrical coordinates
     # Assumption: Input is polarized along positive x direction.
     # https://en.wikipedia.org/wiki/Vector_fields_in_cylindrical_and_spherical_coordinates
     # phi is the same as calculated earlier in the input plane
-    A_0rho = InputField*np.cos(phi)
-    A_0phi = -InputField*np.sin(phi)
+    A_0rho = InputField_x*np.cos(phi) + InputField_y*np.sin(phi)
+    A_0phi = -InputField_x*np.sin(phi) + InputField_y*np.cos(phi)
 
     # Angular spectrum of input field in cartesian coordinates
     # Note: There is a disagreement in sign between [1] and [2] for Az. Following [2]
@@ -111,10 +116,13 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
     # Actual simulation suggests that the output dx is actually wavelength/(2*NA) I'm not sure how I'm missing a factor of 2.pi
     
     out_dx = wavelength/(2*NA) 
+    #xy_span = xy_cells*dx/2
+    #out_dx = wavelength/(2*n_homogenous*(xy_span/np.sqrt(xy_span**2+FocusDepth**2)))    # lambda/(2.n.sin(theta_max))
+    prefactor = -1j*4*R**2*k/(wavelength*FocusDepth*xy_cells**2)
 
-    Ex = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz)
-    Ey = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz)
-    Ez = 1/k*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Az/kz)
+    Ex = prefactor*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz)
+    Ey = prefactor*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz)
+    Ez = prefactor*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Az/kz)
 
     # Normalization
     n0 = np.sum(np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)*out_dx**2
@@ -134,5 +142,6 @@ def TightFocus(InputField,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane
     dx_new = out_dx*ScalingFactor
     xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
 
+    # TODO: Ex, Ey, Ez needs to be scaled by scalingFactor^2 for the total power integrated in new coordinate system to be 1
     return interpEx((xx_new,yy_new)),interpEy((xx_new,yy_new)),interpEz((xx_new,yy_new)),dx_new
     #return Ex,Ey,Ez, out_dx

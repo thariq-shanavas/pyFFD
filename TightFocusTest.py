@@ -4,23 +4,29 @@ import matplotlib.pyplot as plt
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 import seaborn as sns
 from DebyeWolfIntegral import TightFocus
+from FieldPlots import VortexNull
 
+plt.rcParams['figure.dpi']= 300
+plt.rcParams.update({'font.size': 4})
+plt.rcParams['pcolor.shading'] = 'auto'
 
 start_time = time.time()
 
 # Simulation parameters
 wavelength = 500e-9
-dz = 50e-9
 n_h = 1  # Homogenous part of refractive index
 xy_cells = 1024    # Keep this a power of 2 for efficient FFT
 
 beam_radius = 2.38e-3
 focus_depth = 1e-3
-dx = dy = 10*2*beam_radius/(xy_cells)
+dx = dy = 2*2*beam_radius/(xy_cells)
 
 if 2*beam_radius > 0.5*dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
-    ValueError("Beam is larger than simulation cross section")
+    raise ValueError("Beam is larger than simulation cross section")
+
+if beam_radius<50*dx:
+    raise ValueError('Sampling too coarse. Decrease dx')
 
 beam_type = 'LG' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
@@ -33,7 +39,7 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,dx,wavelength,n_h,focus_depth)
+Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,MeasurementPlane_z=0,target_dx=20e-9)
 
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -53,5 +59,8 @@ ax[1][1].pcolormesh(axis,axis,np.abs(Ey))
 ax[1][1].title.set_text("Ey")
 ax[1][2].pcolormesh(axis,axis,np.abs(Ez))
 ax[1][2].title.set_text("Ez")
+
+Focus_Intensity = np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2
+VNull = VortexNull(Focus_Intensity, dx_TightFocus, beam_type, cross_sections = 19, num_samples = 1000)
 
 plt.show()

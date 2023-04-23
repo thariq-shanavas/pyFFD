@@ -61,8 +61,8 @@ print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6
 
 # Calculate fields at FDFD_depth
 dx_seed = dx
-Ex,Ey,Ez,_ = TightFocus(seed,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,target_dx)
-Ex2,Ey2,Ez2,dx = TightFocus(seed,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx)
+Ex,Ey,Ez,_ = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,target_dx)
+Ex2,Ey2,Ez2,dx = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx)
 print('Discretization changed from %1.1f nm to %1.1f nm'  %(dx_seed*10**9,dx*10**9))
 
 
@@ -118,7 +118,7 @@ Ux,Ax, _, _ = propagation_algorithm(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_
 
 
 # Stuff at focus
-Exf,Eyf,Ezf,_ = TightFocus(seed,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
+Exf,Eyf,Ezf,_ = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
 
 fig, ax = plt.subplots(4, 3)
 axis = 10**6*dx_seed*indices

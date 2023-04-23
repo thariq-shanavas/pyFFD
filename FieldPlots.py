@@ -45,7 +45,6 @@ def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, fi
         while beam_cross_section[tmp_index]>beam_cross_section[midpoint]/2.718**2:
             tmp_index = tmp_index+1
         beam_radius = dx*(tmp_index-midpoint)
-        print('Beam radius is %1.1f nm' %(beam_radius*10**9))
     else:
         ValueError('Beam type unknown.')
 
@@ -75,7 +74,7 @@ def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, fi
         beam_center_x = dx*(beam_center_x - xy_cells/2)
         beam_center_y = dx*(beam_center_y - xy_cells/2)
 
-    print('Beam center at %1.1f nm, %1.1f nm' %(beam_center_x*10**9,beam_center_y*10**9))
+    
 
     for i in range(cross_sections):
         
@@ -93,6 +92,7 @@ def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, fi
     null_contrast = 10*np.log10(np.max(av)/av[int(num_samples/2)])
     
     print('Null contrast is %1.1f' %(null_contrast))
+    print('Beam center at %1.1f nm, %1.1f nm' %(beam_center_x*10**9,beam_center_y*10**9))
     print('Radius of beam at focus is %1.1f nm' %(beam_radius*10**9))
     return null_contrast, beam_radius
         
