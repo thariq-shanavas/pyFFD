@@ -17,22 +17,22 @@ propagation_algorithm = propagate_FiniteDifference
 suppress_evanescent = True
 
 # Simulation parameters
-beam_radius = 1.28e-3
+beam_radius = 1e-3
 focus_depth = 1e-3
-FDFD_depth = 10e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
+FDFD_depth = 2.5e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
 xy_cells = 1024    # Keep this a power of 2 for efficient FFT
-dz = 50e-9
-dx = dy = 4*(2*beam_radius)/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
+dz = 25e-9
+dx = dy = 6.5e-3/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
 
 absorption_padding = dx # Thickness of absorbing boundary
 Absorption_strength = 5
-n_h = 1.33  # Homogenous part of refractive index
+n_h = 1  # Homogenous part of refractive index
 
 expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
-target_dx = 50*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output: 6 times the spot size at focus
+target_dx = 30*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output: 6 times the spot size at focus
 
 
 ls = 15e-6  # Mean free path in tissue
@@ -67,8 +67,8 @@ print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6
 
 # Calculate fields at FDFD_depth
 dx_seed = dx
-Ex,Ey,Ez,_ = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,target_dx)
-Ex2,Ey2,Ez2,dx = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx)
+Ex,Ey,Ez,_ = TightFocus(seed,1j*seed,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,target_dx)
+Ex2,Ey2,Ez2,dx = TightFocus(seed,1j*seed,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx)
 print('Discretization changed from %1.1f nm to %1.1f nm'  %(dx_seed*10**9,dx*10**9))
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -132,7 +132,7 @@ Ux,Ax, _, _ = propagation_algorithm(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_
 
 
 # Stuff at focus
-Exf,Eyf,Ezf,_ = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
+Exf,Eyf,Ezf,_ = TightFocus(seed,1j*seed,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
 
 fig, ax = plt.subplots(3, 3)
 axis = 10**6*dx_seed*indices

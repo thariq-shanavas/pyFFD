@@ -44,7 +44,7 @@ def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, fi
         tmp_index = int(xy_cells/2)
         while beam_cross_section[tmp_index]>beam_cross_section[midpoint]/2.718**2:
             tmp_index = tmp_index+1
-        beam_radius = dx*(tmp_index-midpoint)
+        beam_radius = dx*(tmp_index-midpoint-0.5)
     else:
         ValueError('Beam type unknown.')
 

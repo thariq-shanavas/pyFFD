@@ -1,5 +1,5 @@
 import numpy as np
-from FriendlyFourierTransform import FFT2
+from FriendlyFourierTransform import FFT2, iFFT2
 from scipy.interpolate import RegularGridInterpolator
 import warnings
 
@@ -20,11 +20,8 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     wavelength: wavelength of the light
 
     Outputs:
-    
     Ex, Ey, Ez: Electric field components at z = MeasurementPlane_z
-    '''
 
-    '''
     Methodology:
 
     Step 1: Initialization
@@ -52,33 +49,45 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
 
     For each x,y, calculate three integrals for Ex, Ey, Ez
     '''
+
     MeasurementPlane_z = -MeasurementPlane_z    # Origin is at focus and z axis is along the direction of propagation. See Fig 1, [1]
     xy_cells = np.shape(InputField_x)[0]
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
     k = 2*np.pi/wavelength*n_homogenous
-    R = (xy_cells/2)*dx
+    R = (xy_cells/2)*dx     # Aperture radius
+
     if R>FocusDepth:
-        wrn = 'The implementation of the Debye-Wolf integral has shown some scaling issues in the very high NA regime. Exercise caution!'
+        wrn = 'You are in the very high NA regime (Aperture radius > Focal length). The Debye approximation is likely breaking down, esp. if you are overfilling the aperture. Exercise caution!'
         warnings.warn(wrn)
-    NA = n_homogenous*(R/np.sqrt(R**2+FocusDepth**2))     # Obviously not the actual NA, but this is used for mapping k-space to real space later
-    
+
+    #NA = n_homogenous*(R/np.sqrt(R**2+FocusDepth**2))
+    NA = n_homogenous*(R/FocusDepth)
+
     # Check if debye-Wolf method is valid (Eq. 13.13 [https://doi.org/10.1016/0030-4018(81)90107-3])
-    if not(k*FocusDepth>10*np.pi/(np.sin(0.5*np.arcsin(NA/n_homogenous)))**2):
+    if not(k*FocusDepth>10*np.pi/(np.sin(0.5*np.arcsin(min(1,n_homogenous*(R/np.sqrt(R**2+FocusDepth**2))/n_homogenous))))**2):
         raise ValueError('Debye-Wolf Integral is not valid. See [https://doi.org/10.1016/0030-4018(81)90107-3]')
 
     # Angles in the input plane, measured from the focus
-    #theta = np.arctan(np.sqrt(xx**2+yy**2)/FocusDepth)
-    
     theta = np.arcsin(np.minimum(1-1e-8,(np.sqrt(xx**2+yy**2)/R)*NA/n_homogenous))  # theta has to be less than pi/2: There is division by zero in the FFT integrand otherwise.
     phi = np.arctan2(yy,xx)
 
+    ## Propagate a distance f usign Fourier Beam prop
+    dk = 2*np.pi/(dx*xy_cells)
+    indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+    kxkx, kyky = np.meshgrid(dk*indices,dk*indices)
+    f = 1/(dx*xy_cells)*indices
+    k = 2*np.pi*n_homogenous/wavelength
+    k0 = 2*np.pi/wavelength
+    H = np.exp(1j*FocusDepth*np.emath.sqrt((k)**2-kxkx**2-kyky**2))
+    InputField_x_propagated = iFFT2(FFT2(InputField_x)*H)
+    InputField_y_propagated = iFFT2(FFT2(InputField_y)*H)
+
     # Input fields in cylindrical coordinates
-    # Assumption: Input is polarized along positive x direction.
     # https://en.wikipedia.org/wiki/Vector_fields_in_cylindrical_and_spherical_coordinates
     # phi is the same as calculated earlier in the input plane
-    A_0rho = InputField_x*np.cos(phi) + InputField_y*np.sin(phi)
-    A_0phi = -InputField_x*np.sin(phi) + InputField_y*np.cos(phi)
+    A_0rho = InputField_x_propagated*np.cos(phi) + InputField_y_propagated*np.sin(phi)
+    A_0phi = -InputField_x_propagated*np.sin(phi) + InputField_y_propagated*np.cos(phi)
 
     # Angular spectrum of input field in cartesian coordinates
     # Note: There is a disagreement in sign between [1] and [2] for Az. Following [2]
@@ -149,11 +158,7 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
 def SpotSizeCalculator(FocusDepth,BeamRadius,n_homogenous,wavelength,MeasurementPlane_z):
     NA = n_homogenous*BeamRadius/np.sqrt(BeamRadius**2+FocusDepth**2)
     print('Numerical Aperture is %1.2f' %(NA))
-    if NA<0.2:
-        w0 = wavelength*FocusDepth/(n_homogenous*np.pi*BeamRadius)      # Works best for low NA objectives
-    else:
-        w0 = 0.41*wavelength/NA   # Minimum spot size at focus as radius of Airy disk.
-        print('Analytic Spot size is an over estimation!')
+    w0 = wavelength*FocusDepth/(n_homogenous*np.pi*BeamRadius)
     RayleighLength = np.pi*w0**2/wavelength
     geometric_width = 2*BeamRadius*np.abs(MeasurementPlane_z)/FocusDepth
     return max(2*w0*np.sqrt(1+(MeasurementPlane_z/RayleighLength)**2),geometric_width)
