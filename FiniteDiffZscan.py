@@ -23,8 +23,8 @@ start_dist = -10e-6
 stop_dist = 10e-6
 dz = 25e-9
 
-beam_radius = 1.28e-3
-focus_depth = 10e-3
+beam_radius = 100e-6
+focus_depth = 1e-3
 FD_dist = stop_dist-start_dist
 dx = dy = 8*beam_radius/(xy_cells)
 expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,np.abs(start_dist))
@@ -56,8 +56,8 @@ z_cross_section_profile_y_Fourier = np.zeros((100,xy_cells))
 
 sns.heatmap(np.abs(seed))
 plt.show()
-Ex1,Ey1,Ez1,_ = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,-start_dist,expected_spot_size/xy_cells)
-Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,-start_dist-dz,expected_spot_size/xy_cells)
+Ex1,Ey1,Ez1,_ = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,-start_dist,3*expected_spot_size/xy_cells)
+Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,-start_dist-dz,3*expected_spot_size/xy_cells)
 sns.heatmap(np.abs(Ex1))
 plt.show()
 dx = dx_TightFocus

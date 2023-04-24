@@ -222,7 +222,7 @@ def propagate_FiniteDifference(U, A, distance, current_step, dx, dz, xy_cells, i
     # Absorption boundary condition profile = complex part of index
     xy_range = dx*xy_cells/2
     xx, yy = np.meshgrid(dx*indices,dx*indices)
-    absorption_profile = np.exp(-dz*(Absorption_strength*(np.exp((np.abs(xx)-xy_range)/absorption_padding) + np.exp((np.abs(yy)-xy_range)/absorption_padding))))
+    absorption_profile = np.exp((-dz*Absorption_strength*(np.exp((np.abs(xx)-xy_range)/absorption_padding) + np.exp((np.abs(yy)-xy_range)/absorption_padding))))
     # Cannot use imaginary index because it makes the equation numerically unstable. If necessary, apply this profile after U[:,:,2] is calculated as
     # U[:,:,2] = exp(-alpha*dz)*U[:,:,2]
     unique_layers = np.shape(index)[2]

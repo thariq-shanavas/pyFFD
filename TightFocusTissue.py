@@ -10,29 +10,30 @@ from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 
 
 start_time = time.time()
-plt.rcParams['figure.dpi']= 300
+plt.rcParams['figure.dpi']= 150
 plt.rcParams.update({'font.size': 4})
 plt.rcParams['pcolor.shading'] = 'auto'
+
 propagation_algorithm = propagate_FiniteDifference
 suppress_evanescent = True
 
 # Simulation parameters
-beam_radius = 1e-3
-focus_depth = 1e-3
-FDFD_depth = 2.5e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
+beam_radius = 1.2e-3 #2.65e-3
+focus_depth = 3.5e-3
+FDFD_depth = 1e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
 xy_cells = 1024    # Keep this a power of 2 for efficient FFT
-dz = 25e-9
-dx = dy = 6.5e-3/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
+dz = 5e-9
+dx = dy = 12*beam_radius/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
 
-absorption_padding = dx # Thickness of absorbing boundary
-Absorption_strength = 5
-n_h = 1  # Homogenous part of refractive index
+absorption_padding = 5*dx # Thickness of absorbing boundary
+Absorption_strength = 0.1/dz
+n_h = 1.33  # Homogenous part of refractive index
 
 expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
-target_dx = 30*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output: 6 times the spot size at focus
+target_dx = 15*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output: 6 times the spot size at focus
 
 
 ls = 15e-6  # Mean free path in tissue
@@ -43,6 +44,12 @@ if 2*beam_radius > 0.5*dx*xy_cells:
 if dz > (np.pi/10)**2*ls :
     NameError('Step size too large')
 
+## Debye wolf sampling condition
+NA = n_h*1.5*beam_radius/focus_depth
+min_N = 4*NA**2*np.abs(FDFD_depth)/(np.sqrt(n_h**2-NA**2)*wavelength)
+print('Minimum samples: %1.0f' %(min_N))
+if xy_cells<min_N:
+    raise ValueError('Increase resolution!')
 
 
 beam_type = 'G' # 'HG, 'LG', 'G'
@@ -50,11 +57,13 @@ l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
 if beam_type=='LG':
-    seed = LG_OAM_beam(xy_cells, dx, beam_radius, l)
+    seed_x = LG_OAM_beam(xy_cells, dx, beam_radius, l)
+    seed_y = np.zeros(seed_x.shape)
 elif beam_type=='HG':
     seed = HG_beam(xy_cells, dx, beam_radius, u,v)
 elif beam_type=='G':
-    seed = Gaussian_beam(xy_cells, dx, beam_radius)
+    seed_x = Gaussian_beam(xy_cells, dx, beam_radius)
+    seed_y = np.zeros(seed_x.shape)
 else:
     xx,yy = np.meshgrid(dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_),dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_))
     seed = (xx**2+yy**2<beam_radius**2).astype(float)
@@ -67,19 +76,24 @@ print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6
 
 # Calculate fields at FDFD_depth
 dx_seed = dx
-Ex,Ey,Ez,_ = TightFocus(seed,1j*seed,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,target_dx)
-Ex2,Ey2,Ez2,dx = TightFocus(seed,1j*seed,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx)
+Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,target_dx)
+Ex2,Ey2,Ez2,dx = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx)
 print('Discretization changed from %1.1f nm to %1.1f nm'  %(dx_seed*10**9,dx*10**9))
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-fig, ax = plt.subplots(3)
+fig = plt.figure()
+ax1 = fig.add_subplot(1,3,1, adjustable='box', aspect=1)
+ax2 = fig.add_subplot(1,3,2, adjustable='box', aspect=1)
+ax3 = fig.add_subplot(1,3,3, adjustable='box', aspect=1)
+
 axis = 10**6*dx*indices
-ax[0].pcolormesh(axis,axis,np.abs(Ex))
-ax[0].title.set_text("Hand off Ex")
-ax[1].pcolormesh(axis,axis,np.abs(Ey))
-ax[1].title.set_text("Hand off Ey")
-ax[2].pcolormesh(axis,axis,np.abs(Ez))
-ax[2].title.set_text("Hand off Ez")
+ax1.pcolormesh(axis,axis,np.abs(Ex))
+ax1.title.set_text("Hand off Ex")
+ax2.pcolormesh(axis,axis,np.abs(Ey))
+ax2.title.set_text("Hand off Ey")
+ax3.pcolormesh(axis,axis,np.abs(Ez))
+ax3.title.set_text("Hand off Ez")
+plt.gca().set_aspect('equal')
 plt.show()
 # FDFD Propagation
 Total_steps = int(FDFD_depth/dz)+2
@@ -132,11 +146,11 @@ Ux,Ax, _, _ = propagation_algorithm(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_
 
 
 # Stuff at focus
-Exf,Eyf,Ezf,_ = TightFocus(seed,1j*seed,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
+Exf,Eyf,Ezf,_ = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
 
 fig, ax = plt.subplots(3, 3)
 axis = 10**6*dx_seed*indices
-ax[0][0].pcolormesh(axis,axis,np.abs(seed)**2)
+ax[0][0].pcolormesh(axis,axis,np.abs(seed_x)**2+np.abs(seed_y)**2)
 ax[0][0].title.set_text('Seed Intensity')
 
 axis = 10**6*dx*indices
