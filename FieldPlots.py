@@ -93,6 +93,6 @@ def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, fi
     
     print('Null contrast is %1.1f' %(null_contrast))
     print('Beam center at %1.1f nm, %1.1f nm' %(beam_center_x*10**9,beam_center_y*10**9))
-    print('Radius of beam at focus is %1.1f nm' %(beam_radius*10**9))
+    print('Spot size is %1.1f nm' %(2*beam_radius*10**9))
     return null_contrast, beam_radius
         

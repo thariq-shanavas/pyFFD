@@ -6,7 +6,7 @@ from PropagationAlgorithm import propagate, propagate_Fourier, propagate_FiniteD
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 from FieldPlots import PlotSnapshots, VortexNull
 from GenerateRandomTissue import RandomTissue
-from DebyeWolfIntegral import TightFocus
+from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 
 
 start_time = time.time()
@@ -17,22 +17,22 @@ propagation_algorithm = propagate_FiniteDifference
 suppress_evanescent = True
 
 # Simulation parameters
-beam_radius = 100e-6
+beam_radius = 1.28e-3
 focus_depth = 1e-3
 FDFD_depth = 10e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
-xy_cells = 512    # Keep this a power of 2 for efficient FFT
-dz = 5e-9
-dx = dy = 10*(2*beam_radius)/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+dz = 50e-9
+dx = dy = 4*(2*beam_radius)/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
 
 absorption_padding = dx # Thickness of absorbing boundary
 Absorption_strength = 5
 n_h = 1.33  # Homogenous part of refractive index
 
-expected_spot_size = 15e-6  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
-target_dx = 3*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output
+expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
+target_dx = 50*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output: 6 times the spot size at focus
 
 
 ls = 15e-6  # Mean free path in tissue
@@ -45,7 +45,7 @@ if dz > (np.pi/10)**2*ls :
 
 
 
-beam_type = 'LG' # 'HG, 'LG', 'G'
+beam_type = 'G' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
@@ -53,8 +53,14 @@ if beam_type=='LG':
     seed = LG_OAM_beam(xy_cells, dx, beam_radius, l)
 elif beam_type=='HG':
     seed = HG_beam(xy_cells, dx, beam_radius, u,v)
-else:
+elif beam_type=='G':
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
+else:
+    xx,yy = np.meshgrid(dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_),dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_))
+    seed = (xx**2+yy**2<beam_radius**2).astype(float)
+
+if beam_type=='G':
+    print('Expected spot size: %1.3f um' %(expected_spot_size*10**6))
 
 unique_layers=int(FDFD_depth/(5*dz))
 print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6,xy_cells*dx*10**6,focus_depth*10**6))
@@ -65,13 +71,21 @@ Ex,Ey,Ez,_ = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,tar
 Ex2,Ey2,Ez2,dx = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx)
 print('Discretization changed from %1.1f nm to %1.1f nm'  %(dx_seed*10**9,dx*10**9))
 
-
+indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+fig, ax = plt.subplots(3)
+axis = 10**6*dx*indices
+ax[0].pcolormesh(axis,axis,np.abs(Ex))
+ax[0].title.set_text("Hand off Ex")
+ax[1].pcolormesh(axis,axis,np.abs(Ey))
+ax[1].title.set_text("Hand off Ey")
+ax[2].pcolormesh(axis,axis,np.abs(Ez))
+ax[2].title.set_text("Hand off Ez")
+plt.show()
 # FDFD Propagation
 Total_steps = int(FDFD_depth/dz)+2
 imaging_depth = [] # Take snapshots at these depths
 imaging_depth_indices = []
 
-indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
 #xx, yy = np.meshgrid(dx*indices,dx*indices)
 #k = 2*np.pi*n_h/wavelength
 #k0 = 2*np.pi/wavelength
@@ -86,8 +100,8 @@ Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 Ax = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
 # Uniform index for now TODO: Change this
-#n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
-n = RandomTissue(xy_cells, Total_steps, wavelength, dx, dz, n_h, ls, g,unique_layers)
+n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
+#n = RandomTissue(xy_cells, Total_steps, wavelength, dx, dz, n_h, ls, g,unique_layers)
 ## For first two steps of Ex
 Uz[:,:,0] = Ez
 Az[:,:,0] = FFT2(Uz[:,:,0])
@@ -120,7 +134,7 @@ Ux,Ax, _, _ = propagation_algorithm(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_
 # Stuff at focus
 Exf,Eyf,Ezf,_ = TightFocus(seed,0,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
 
-fig, ax = plt.subplots(4, 3)
+fig, ax = plt.subplots(3, 3)
 axis = 10**6*dx_seed*indices
 ax[0][0].pcolormesh(axis,axis,np.abs(seed)**2)
 ax[0][0].title.set_text('Seed Intensity')
@@ -144,13 +158,6 @@ ax[2][1].pcolormesh(axis,axis,np.abs(Uy[:,:,1]))
 ax[2][1].title.set_text("DW + FD Ey")
 ax[2][2].pcolormesh(axis,axis,np.abs(Uz[:,:,1]))
 ax[2][2].title.set_text("DW + FD Ez")
-
-ax[3][0].pcolormesh(axis,axis,np.abs(Ex))
-ax[3][0].title.set_text("Hand off Ex")
-ax[3][1].pcolormesh(axis,axis,np.abs(Ey))
-ax[3][1].title.set_text("Hand off Ey")
-ax[3][2].pcolormesh(axis,axis,np.abs(Ez))
-ax[3][2].title.set_text("Hand off Ez")
 
 Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 VNull = VortexNull(Focus_Intensity, dx, beam_type, cross_sections = 19, num_samples = 1000)

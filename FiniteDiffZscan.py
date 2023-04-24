@@ -14,7 +14,7 @@ start_time = time.time()
 
 # Simulation parameters
 wavelength = 500e-9
-n_h = 1  # Homogenous part of refractive index
+n_h = 1.33  # Homogenous part of refractive index
 xy_cells = 512    # Keep this a power of 2 for efficient FFT
 unique_layers = 20
 n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
@@ -23,7 +23,7 @@ start_dist = -10e-6
 stop_dist = 10e-6
 dz = 25e-9
 
-beam_radius = 200e-6
+beam_radius = 1.28e-3
 focus_depth = 1e-3
 FD_dist = stop_dist-start_dist
 dx = dy = 5*beam_radius/(xy_cells)
@@ -56,8 +56,8 @@ z_cross_section_profile_y_Fourier = np.zeros((100,xy_cells))
 
 sns.heatmap(np.abs(seed))
 plt.show()
-Ex1,Ey1,Ez1,_ = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,-start_dist,6*expected_spot_size/xy_cells)
-Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,-start_dist-dz,6*expected_spot_size/xy_cells)
+Ex1,Ey1,Ez1,_ = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,-start_dist,expected_spot_size/xy_cells)
+Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,0,dx,wavelength,n_h,focus_depth,-start_dist-dz,expected_spot_size/xy_cells)
 sns.heatmap(np.abs(Ex1))
 plt.show()
 dx = dx_TightFocus

@@ -70,7 +70,7 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     # Angles in the input plane, measured from the focus
     #theta = np.arctan(np.sqrt(xx**2+yy**2)/FocusDepth)
     
-    theta = np.arcsin(np.minimum(0.9999,(np.sqrt(xx**2+yy**2)/R)*NA/n_homogenous))  # theta has to be less than pi/2: There is division by zero in the FFT integrand otherwise.
+    theta = np.arcsin(np.minimum(1-1e-8,(np.sqrt(xx**2+yy**2)/R)*NA/n_homogenous))  # theta has to be less than pi/2: There is division by zero in the FFT integrand otherwise.
     phi = np.arctan2(yy,xx)
 
     # Input fields in cylindrical coordinates
@@ -104,7 +104,7 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
 
     # Ax, Ay, Az were originally evaluated in a curved plane with non-uniform sampling in theta and phi.
     # Equivalently, sampled uniformly in a grid spaced by dx in a plane projection.
-    # If we can cransform the discretization dx to dk, Ax becomes uniformly sampled in kx-ky space. We need this to run FFT.
+    # If we can transform the discretization dx to dk, Ax becomes uniformly sampled in kx-ky space. We need this to run FFT.
     # The plane projection with N samples in the x-direction is mapped to 2.k.sin(theta_max) in the x-direction. i.e., -k.sin(theta) to k.sin(theta)
     # sin(theta_max) is related to the NA of the lens as NA/index
     # Therefore kx is discretized as (d kx) = (2.k.{NA/n_homogenous})/xy_cells
@@ -148,8 +148,12 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
 
 def SpotSizeCalculator(FocusDepth,BeamRadius,n_homogenous,wavelength,MeasurementPlane_z):
     NA = n_homogenous*BeamRadius/np.sqrt(BeamRadius**2+FocusDepth**2)
-    w0 = 0.41*wavelength/NA   # Minimum spot size at focus as radius of Airy disk. 
-    #w0 = wavelength*FocusDepth/(np.pi*BeamRadius)      # Works best for low NA objectives
+    print('Numerical Aperture is %1.2f' %(NA))
+    if NA<0.2:
+        w0 = wavelength*FocusDepth/(n_homogenous*np.pi*BeamRadius)      # Works best for low NA objectives
+    else:
+        w0 = 0.41*wavelength/NA   # Minimum spot size at focus as radius of Airy disk.
+        print('Analytic Spot size is an over estimation!')
     RayleighLength = np.pi*w0**2/wavelength
-
-    return w0*np.sqrt(1+(MeasurementPlane_z/RayleighLength)**2)
+    geometric_width = 2*BeamRadius*np.abs(MeasurementPlane_z)/FocusDepth
+    return max(2*w0*np.sqrt(1+(MeasurementPlane_z/RayleighLength)**2),geometric_width)
