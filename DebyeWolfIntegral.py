@@ -3,7 +3,7 @@ from FriendlyFourierTransform import FFT2, iFFT2
 from scipy.interpolate import RegularGridInterpolator
 import warnings
 
-def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,target_dx=25e-9):
+def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,target_dx=25e-9,zero_padding=8192):
     '''
     Provides the 3D field from focusing a polarized input field through a thick lens
     Axis of the lens is along z. Input polarization is assumed to be along x direction.
@@ -129,9 +129,38 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     #out_dx = wavelength/(2*n_homogenous*(xy_span/np.sqrt(xy_span**2+FocusDepth**2)))    # lambda/(2.n.sin(theta_max))
     prefactor = -1j*4*R**2*k/(wavelength*FocusDepth*xy_cells**2)
 
-    Ex = prefactor*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz)
-    Ey = prefactor*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz)
-    Ez = prefactor*FFT2(np.exp(1j*kz*MeasurementPlane_z)*Az/kz)
+    '''
+    I apologize to future me (or anyone else) who needs to read this again. Here is 
+    what I'm doing.
+
+    I'm scaling the output dx in two steps: once by zero-padding the input field and 
+    once by linear interpolation of the FFT result.
+
+    The net scaling is target_dx/out_dx where target_dx is an argument to this function and 
+    out_dx is calculated above, following [2]
+
+    Scaling1 = 8192/xy_cells
+    Scaling2 = Net_Scaling/Scaling1
+
+    Aiming for 8192 because 8192x8192 float32 takes 256 MB.
+    We do scaling steps 1 and 2 at the same time so Python garbage collection can kick in immediately
+    '''
+
+    # Scaling Factors are all expected to be less than 1
+    ScalingFactor = target_dx/out_dx
+    ScalingFactor1 = xy_cells/zero_padding
+    ScalingFactor2 = ScalingFactor/ScalingFactor1
+
+    dx_step1 = out_dx*ScalingFactor1
+
+    pad = int((zero_padding-xy_cells)/2)
+    index_step1 = np.linspace(-zero_padding/2,zero_padding/2-1,zero_padding,dtype=np.int_)
+    #xx_step1, yy_step1 = np.meshgrid(dx_step1*index_step1,dx_step1*index_step1,indexing='ij')
+    xx_final, yy_final = np.meshgrid(target_dx*indices,target_dx*indices,indexing='ij')
+
+    Ex = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
+    Ey = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
+    Ez = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(np.exp(1j*kz*MeasurementPlane_z)*Az/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
 
     # Normalization
     n0 = np.sum(np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)*out_dx**2
@@ -139,20 +168,12 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     Ey = Ey/n0
     Ez = Ez/n0
 
-    # Scaling the discretization in space
-    ScalingFactor = target_dx/out_dx
-    if ScalingFactor <0.1:
-        wrn = 'High output interpolation factor ('+str(1/ScalingFactor)+'): Increase xy_cells or dx'
+    if ScalingFactor2 <0.1:
+        wrn = 'High output interpolation factor ('+str(1/ScalingFactor2)+'): Increase xy_cells or dx'
         warnings.warn(wrn)
 
-    interpEx = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ex, bounds_error = False, fill_value = 0, method='linear')
-    interpEy = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ey, bounds_error = False, fill_value = 0, method='linear')
-    interpEz = RegularGridInterpolator((out_dx*indices,out_dx*indices), Ez, bounds_error = False, fill_value = 0, method='linear')
-    dx_new = out_dx*ScalingFactor
-    xx_new, yy_new = np.meshgrid(dx_new*indices,dx_new*indices,indexing='ij')
-
     # TODO: Ex, Ey, Ez needs to be scaled by scalingFactor^2 for the total power integrated in new coordinate system to be 1
-    return interpEx((xx_new,yy_new)),interpEy((xx_new,yy_new)),interpEz((xx_new,yy_new)),dx_new
+    return Ex,Ey,Ez,target_dx
     #return Ex,Ey,Ez, out_dx
 
 def SpotSizeCalculator(FocusDepth,BeamRadius,n_homogenous,wavelength,MeasurementPlane_z):

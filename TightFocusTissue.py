@@ -18,22 +18,22 @@ propagation_algorithm = propagate_FiniteDifference
 suppress_evanescent = True
 
 # Simulation parameters
-beam_radius = 1.2e-3 #2.65e-3
+beam_radius = 1e-3 #2.65e-3
 focus_depth = 3.5e-3
-FDFD_depth = 1e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
+FDFD_depth = 10e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
-xy_cells = 1024    # Keep this a power of 2 for efficient FFT
-dz = 5e-9
-dx = dy = 12*beam_radius/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
+xy_cells = 256    # Keep this a power of 2 for efficient FFT
+dz = 10e-9
+dx = dy = 5*beam_radius/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
 
 absorption_padding = 5*dx # Thickness of absorbing boundary
-Absorption_strength = 0.1/dz
+Absorption_strength = 10
 n_h = 1.33  # Homogenous part of refractive index
 
-expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
-target_dx = 15*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output: 6 times the spot size at focus
+expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
+target_dx = 3*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output: 6 times the spot size at focus
 
 
 ls = 15e-6  # Mean free path in tissue
@@ -47,18 +47,19 @@ if dz > (np.pi/10)**2*ls :
 ## Debye wolf sampling condition
 NA = n_h*1.5*beam_radius/focus_depth
 min_N = 4*NA**2*np.abs(FDFD_depth)/(np.sqrt(n_h**2-NA**2)*wavelength)
-print('Minimum samples: %1.0f' %(min_N))
-if xy_cells<min_N:
+print('Minimum samples: %1.0f' %(2*min_N))
+if xy_cells<2*min_N:
     raise ValueError('Increase resolution!')
 
 
-beam_type = 'G' # 'HG, 'LG', 'G'
+beam_type = 'LG' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
 if beam_type=='LG':
     seed_x = LG_OAM_beam(xy_cells, dx, beam_radius, l)
-    seed_y = np.zeros(seed_x.shape)
+    seed_y = 1j*seed_x
+    #seed_y = np.zeros(seed_x.shape)
 elif beam_type=='HG':
     seed = HG_beam(xy_cells, dx, beam_radius, u,v)
 elif beam_type=='G':
@@ -67,7 +68,8 @@ elif beam_type=='G':
 else:
     xx,yy = np.meshgrid(dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_),dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_))
     seed = (xx**2+yy**2<beam_radius**2).astype(float)
-
+plt.pcolormesh(np.abs(seed_x)**2+np.abs(seed_y**2))
+plt.show()
 if beam_type=='G':
     print('Expected spot size: %1.3f um' %(expected_spot_size*10**6))
 
@@ -76,8 +78,8 @@ print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6
 
 # Calculate fields at FDFD_depth
 dx_seed = dx
-Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,target_dx)
-Ex2,Ey2,Ez2,dx = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx)
+Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,FDFD_depth,target_dx,4096)
+Ex2,Ey2,Ez2,dx = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx,4096)
 print('Discretization changed from %1.1f nm to %1.1f nm'  %(dx_seed*10**9,dx*10**9))
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)

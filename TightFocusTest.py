@@ -15,11 +15,11 @@ start_time = time.time()
 # Simulation parameters
 wavelength = 500e-9
 n_h = 1  # Homogenous part of refractive index
-xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+xy_cells = 512    # Keep this a power of 2 for efficient FFT
 
 beam_radius = 1e-3
-focus_depth = 1e-3
-dx = dy = 6.5e-3/(xy_cells)
+focus_depth = 5e-3
+dx = dy = 5e-3/(xy_cells)
 
 if 2*beam_radius > dx*xy_cells:
     # Beam diameter greater than half the length of the simulation cross section.
@@ -28,7 +28,7 @@ if 2*beam_radius > dx*xy_cells:
 if beam_radius<50*dx:
     raise ValueError('Sampling too coarse. Decrease dx')
 
-beam_type = 'G' # 'HG, 'LG', 'G'
+beam_type = 'LG' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
@@ -39,7 +39,7 @@ elif beam_type=='HG':
 else:
     seed = Gaussian_beam(xy_cells, dx, beam_radius)
 
-Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,MeasurementPlane_z=0,target_dx=2e-9)
+Ex,Ey,Ez,dx_TightFocus = TightFocus(seed,1j*seed,dx,wavelength,n_h,focus_depth,MeasurementPlane_z=1e-6,target_dx=10e-9)
 
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -64,3 +64,4 @@ Focus_Intensity = np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2
 VNull = VortexNull(Focus_Intensity, dx_TightFocus, beam_type, cross_sections = 19, num_samples = 1000)
 
 plt.show()
+print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))

@@ -15,18 +15,18 @@ start_time = time.time()
 # Simulation parameters
 wavelength = 500e-9
 n_h = 1.33  # Homogenous part of refractive index
-xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+xy_cells = 512    # Keep this a power of 2 for efficient FFT
 unique_layers = 20
 n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
 
-start_dist = -10e-6
-stop_dist = 10e-6
-dz = 25e-9
+start_dist = -100e-6
+stop_dist = 100e-6
+dz = 50e-9
 
 beam_radius = 100e-6
 focus_depth = 1e-3
 FD_dist = stop_dist-start_dist
-dx = dy = 8*beam_radius/(xy_cells)
+dx = dy = 5*beam_radius/(xy_cells)
 expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,np.abs(start_dist))
 steps = int(FD_dist/dz)   # Make sure its a multiple of 4
 if 2*beam_radius > 0.5*dx*xy_cells:
@@ -56,8 +56,8 @@ z_cross_section_profile_y_Fourier = np.zeros((100,xy_cells))
 
 sns.heatmap(np.abs(seed))
 plt.show()
-Ex1,Ey1,Ez1,_ = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,-start_dist,3*expected_spot_size/xy_cells)
-Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,-start_dist-dz,3*expected_spot_size/xy_cells)
+Ex1,Ey1,Ez1,_ = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,-start_dist,1.5*expected_spot_size/xy_cells,1024)
+Ex2,Ey2,Ez2,dx_TightFocus = TightFocus(seed,np.zeros(seed.shape),dx,wavelength,n_h,focus_depth,-start_dist-dz,1.5*expected_spot_size/xy_cells,1024)
 sns.heatmap(np.abs(Ex1))
 plt.show()
 dx = dx_TightFocus
@@ -82,7 +82,7 @@ for i in range(steps):
     U[:,:,0] = U[:,:,1]
     U[:,:,1] = U[:,:,2]
 
-    z_cross_section_profile_y[i,:] = (np.abs(U[:,:,2])**2)[:,int(xy_cells/2)]
+    z_cross_section_profile_y[i,:] = (np.abs(U[:,:,2])**2)[:,int(xy_cells/2)]/np.max((np.abs(U[:,:,2])**2)[:,int(xy_cells/2)])
     z_cross_section_profile_x[i,:] = (np.abs(U[:,:,2])**2)[int(xy_cells/2),:]
 
 k = 2*np.pi*n_h/wavelength
@@ -137,4 +137,15 @@ plt.gca().set_aspect('equal')
 plt.show()
 VortexNull(np.abs(Exf)**2, dx_TightFocus, beam_type, cross_sections = 19, num_samples = 1000)
 '''
+
+w0 = wavelength*focus_depth/(n_h*np.pi*beam_radius)
+RayleighLength = np.pi*w0**2/wavelength
+z_scan_depths = np.linspace(start_dist,stop_dist,100)
+profile = w0*np.sqrt(1+(z_scan_depths/RayleighLength)**2)
+plt.plot(10**6*z_scan_depths,10**6*profile)
+plt.plot(10**6*z_scan_depths,-10**6*profile)
+z_scan_depths = np.linspace(start_dist,stop_dist,steps)
+plt.pcolormesh(10**6*z_scan_depths,axis,np.transpose(z_cross_section_profile_y))
+plt.show()
+
 print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
