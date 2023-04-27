@@ -9,7 +9,7 @@ import numpy as np
 import scipy.signal as signal
 from scipy.stats import norm
 
-def RandomTissue(xy_cells, Total_steps, wavelength, dx, dz, n_h, ls, g, unique_layers):
+def RandomTissue(xy_cells, wavelength, dx, dz, n_h, ls, g, unique_layers):
     # Generates random fluctuations in refractive index following https://doi.org/10.1364/OL.44.004989
     
     
@@ -21,7 +21,7 @@ def RandomTissue(xy_cells, Total_steps, wavelength, dx, dz, n_h, ls, g, unique_l
     sigma_x = np.interp(g,g_vs_sigma_x[:,1],g_vs_sigma_x[:,0])*wavelength
     if sigma_x < 1.5*dx:
         print('Warning: fluctuations in tissue index finer than transverse resolution')
-    n_ih = np.zeros((xy_cells,xy_cells,unique_layers),dtype=np.float_)
+    n_ih = np.zeros((xy_cells,xy_cells,unique_layers),dtype=np.float32)
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
     mask = np.exp(-(xx**2+yy**2)/(2*sigma_x**2))

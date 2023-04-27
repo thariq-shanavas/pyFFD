@@ -20,20 +20,20 @@ suppress_evanescent = True
 # Simulation parameters
 beam_radius = 1e-3 #2.65e-3
 focus_depth = 3.5e-3
-FDFD_depth = 10e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
+FDFD_depth = 55e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
-xy_cells = 256    # Keep this a power of 2 for efficient FFT
-dz = 10e-9
-dx = dy = 5*beam_radius/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable
-# Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2))
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+dz = 50e-9
+dx = dy = 5*beam_radius/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable unless evanescent fields are suppressed.
+# Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2)) or evanescent fields suppressed.
 
 absorption_padding = 5*dx # Thickness of absorbing boundary
 Absorption_strength = 10
 n_h = 1.33  # Homogenous part of refractive index
 
 expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
-target_dx = 3*expected_spot_size/xy_cells   # Target dx for debye-wolf calc output: 6 times the spot size at focus
+target_dx = expected_spot_size*2/xy_cells   # Target dx for debye-wolf calc output
 
 
 ls = 15e-6  # Mean free path in tissue
@@ -47,8 +47,8 @@ if dz > (np.pi/10)**2*ls :
 ## Debye wolf sampling condition
 NA = n_h*1.5*beam_radius/focus_depth
 min_N = 4*NA**2*np.abs(FDFD_depth)/(np.sqrt(n_h**2-NA**2)*wavelength)
-print('Minimum samples: %1.0f' %(2*min_N))
-if xy_cells<2*min_N:
+print('Minimum samples: %1.0f' %(4*min_N))
+if xy_cells<4*min_N:
     raise ValueError('Increase resolution!')
 
 
@@ -61,7 +61,8 @@ if beam_type=='LG':
     seed_y = 1j*seed_x
     #seed_y = np.zeros(seed_x.shape)
 elif beam_type=='HG':
-    seed = HG_beam(xy_cells, dx, beam_radius, u,v)
+    seed_y = HG_beam(xy_cells, dx, beam_radius, u,v)    # This is well behaved and does not fill in at the focus
+    seed_x = np.zeros(seed_y.shape)
 elif beam_type=='G':
     seed_x = Gaussian_beam(xy_cells, dx, beam_radius)
     seed_y = np.zeros(seed_x.shape)
@@ -73,7 +74,7 @@ plt.show()
 if beam_type=='G':
     print('Expected spot size: %1.3f um' %(expected_spot_size*10**6))
 
-unique_layers=int(FDFD_depth/(5*dz))
+unique_layers=100
 print('Simulation volume is %1.1f um x %1.1f um x %1.1f um'  %(xy_cells*dx*10**6,xy_cells*dx*10**6,focus_depth*10**6))
 
 # Calculate fields at FDFD_depth
@@ -116,8 +117,8 @@ Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 Ax = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
 # Uniform index for now TODO: Change this
-n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
-#n = RandomTissue(xy_cells, Total_steps, wavelength, dx, dz, n_h, ls, g,unique_layers)
+#n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
+n = RandomTissue(xy_cells, wavelength, target_dx, dz, n_h, ls, g,unique_layers)
 ## For first two steps of Ex
 Uz[:,:,0] = Ez
 Az[:,:,0] = FFT2(Uz[:,:,0])
@@ -175,7 +176,11 @@ ax[2][1].title.set_text("DW + FD Ey")
 ax[2][2].pcolormesh(axis,axis,np.abs(Uz[:,:,1]))
 ax[2][2].title.set_text("DW + FD Ez")
 
-Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
+if beam_type=='HG':
+    Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
+    Focus_Intensity = (Focus_Intensity+np.transpose(Focus_Intensity))/2
+else:
+    Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 VNull = VortexNull(Focus_Intensity, dx, beam_type, cross_sections = 19, num_samples = 1000)
 
 print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
