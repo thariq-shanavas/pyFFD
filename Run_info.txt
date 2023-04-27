@@ -1,0 +1,28 @@
+Run 1
+####DESKTOP####
+propagation_algorithm = propagate_FiniteDifference
+suppress_evanescent = True
+beam_type = 'LG' # 'HG, 'LG', 'G'
+depths = 1e-6*np.array([5,15,25,35,45,55])
+
+Contrast = np.zeros(depths.shape)
+radii = np.zeros(depths.shape)
+
+# Simulation parameters
+beam_radius = 1e-3
+focus_depth = 3.5e-3
+
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+wavelength = 500e-9
+target_dx = 817e-10   # Target dx for debye-wolf calc output
+dz = 10e-9
+n_h = 1.33  # Homogenous part of refractive index
+ls = 15e-6  # Mean free path in tissue
+g = 0.92    # Anisotropy factor
+unique_layers=100
+n = np.load('refractive_index_2048_500_408e-10_10e-9_133e-2_15e-6_92e-2_100.npy')
+
+
+dx = 5*beam_radius/(xy_cells)
+absorption_padding = 5*dx # Thickness of absorbing boundary
+Absorption_strength = 10

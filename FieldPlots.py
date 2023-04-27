@@ -86,9 +86,9 @@ def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, fi
         
     av = np.average(Field_cross_sections,axis = 1)
     x = np.linspace(-2*beam_radius,2*beam_radius,num_samples)
-    plt.figure()
-    plt.plot(x,(av))
-    plt.show()
+    #plt.figure()
+    #plt.plot(x,(av))
+    #plt.show()
     null_contrast = 10*np.log10(np.max(av)/av[int(num_samples/2)])
     
     print('Null contrast is %1.1f' %(null_contrast))
