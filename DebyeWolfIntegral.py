@@ -65,7 +65,7 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     NA = n_homogenous*(R/FocusDepth)
 
     # Check if debye-Wolf method is valid (Eq. 13.13 [https://doi.org/10.1016/0030-4018(81)90107-3])
-    if not(k*FocusDepth>10*np.pi/(np.sin(0.5*np.arcsin(min(1,n_homogenous*(R/np.sqrt(R**2+FocusDepth**2))/n_homogenous))))**2):
+    if not(k*FocusDepth>10*np.pi/(np.sin(0.5*np.arcsin(R/np.sqrt(R**2+FocusDepth**2))))**2):
         raise ValueError('Debye-Wolf Integral is not valid. See [https://doi.org/10.1016/0030-4018(81)90107-3]')
 
     # Angles in the input plane, measured from the focus
