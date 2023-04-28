@@ -23,7 +23,7 @@ focus_depth = 3.5e-3
 FDFD_depth = 55e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
-xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+xy_cells = 2048    # Keep this a power of 2 for efficient FFT
 dz = 50e-9
 dx = dy = 5*beam_radius/(xy_cells) # Minimum resolution = lambda/(n*sqrt(2)) for finite difference. Any lower and the algorithm is numerically unstable unless evanescent fields are suppressed.
 # Note that the dx changes after the tight focus. Make sure the dx is still greater than lambda/(n*sqrt(2)) or evanescent fields suppressed.
@@ -34,7 +34,7 @@ n_h = 1.33  # Homogenous part of refractive index
 
 expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
 target_dx = expected_spot_size*2/xy_cells   # Target dx for debye-wolf calc output
-
+print('Tissue depth %1.1f um. Expected spot size at start of FDFD region is %1.2f um, simulation cross section is %1.2f um' %(10**6*FDFD_depth, 10**6*expected_spot_size,xy_cells*target_dx*10**6))
 
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
