@@ -212,7 +212,6 @@ def propagate_FiniteDifference(U, A, distance, current_step, dx, dz, xy_cells, i
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     #kxkx, kyky = np.meshgrid(dk*indices,dk*indices)
     f = 1/(dx*xy_cells)*indices
-    k = 2*np.pi*index/wavelength
     k0 = 2*np.pi/wavelength
     steps = int(distance/dz)
     fxfx,fyfy = np.meshgrid(f,f)

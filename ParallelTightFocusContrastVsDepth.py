@@ -93,7 +93,7 @@ def Tightfocus_HG(depth):
 
     (u,v) = (0,1)   # Mode numbers for HG beam
     seed_x = HG_beam(xy_cells, dx, beam_radius, u,v)    # This is well behaved and does not fill in at the focus
-    seed_y = np.zeros(seed_y.shape)
+    seed_y = np.zeros(seed_x.shape)
     Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,target_dx,4096)
     Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx,4096)
 
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
     n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, target_dx, dz, n_h, ls, g, unique_layers)
 
-    p = Pool(2)
+    p = Pool(4)
     LG_result = p.map(Tightfocus_LG, depths)
     print('LG results')
     print(LG_result)
