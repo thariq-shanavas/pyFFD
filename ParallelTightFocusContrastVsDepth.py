@@ -19,15 +19,15 @@ suppress_evanescent = True
 # Simulation parameters
 beam_radius = 1e-3
 focus_depth = 3.5e-3
-xy_cells = 2048    # Keep this a power of 2 for efficient FFT
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
 shared_mem_name = 'TissueMatrix2048x30'
 wavelength = 500e-9
-target_dx = 408e-10   # Target dx for debye-wolf calc output. Set this such that beam radius at beginning of FD region fills the sim cross section
-dz = 10e-9
+target_dx = 817e-10   # Target dx for debye-wolf calc output. Set this such that beam radius at beginning of FD region fills the sim cross section
+dz = 15e-9
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
-unique_layers = 30    # Unique layers of index for procedural generation of tissue index. Unclear what's the effect of making this small.
+unique_layers = 70    # Unique layers of index for procedural generation of tissue index. Unclear what's the effect of making this small.
 
 # Other parameters - do not change
 dx = 5*beam_radius/(xy_cells) 
@@ -185,6 +185,11 @@ if __name__ == '__main__':
     start_time = time.time()
     depths = 1e-6*np.array([55,45,35,25,15,5])
     shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
+    p = Pool(6)
+    num_runs = 5
+    LG_result = np.zeros((6,num_runs))
+    HG_result = np.zeros((6,num_runs))
+    
     #n = np.load('refractive_index_2048_500_408e-10_10e-9_133e-2_15e-6_92e-2_100.npy')
 
     try:
@@ -192,18 +197,27 @@ if __name__ == '__main__':
     except FileExistsError:
         shm = shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes)
     n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
-    n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, target_dx, dz, n_h, ls, g, unique_layers)
 
-    p = Pool(4)
-    LG_result = p.map(Tightfocus_LG, depths)
-    print('LG results')
+    for run_number in range(num_runs):
+        n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, target_dx, dz, n_h, ls, g, unique_layers)
+
+        LG_result[:,run_number] = p.map(Tightfocus_LG, depths)
+        print('LG results')
+        print(LG_result[:,run_number])
+
+        HG_result[:,run_number] = p.map(Tightfocus_HG, depths)
+        print('HG results')
+        print(HG_result[:,run_number])
+    
+    print('LG results final')
     print(LG_result)
-    np.save('Contrast_LG', LG_result)
 
-    HG_result = p.map(Tightfocus_HG, depths)
-    print('HG results')
+    print('HG results final')
     print(HG_result)
+
+    np.save('Contrast_LG', LG_result)
     np.save('Contrast_HG', HG_result)
+
 
     print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
     

@@ -208,7 +208,7 @@ def propagate_FiniteDifference(U, A, distance, current_step, dx, dz, xy_cells, i
     # Field
     # current_step
     # Field(:,:,1) is duplicated as Field(:,:,2)
-    print('Solving Helmholtz equation by finite difference...')
+    # print('Solving Helmholtz equation by finite difference...')
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     #kxkx, kyky = np.meshgrid(dk*indices,dk*indices)
     f = 1/(dx*xy_cells)*indices
