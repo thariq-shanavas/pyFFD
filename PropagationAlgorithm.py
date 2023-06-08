@@ -278,8 +278,15 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, absor
     fxfx,fyfy = np.meshgrid(f,f)
     mask = ((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
 
+    # Reserving memory for copying the refractive index to a new variable
+    # This variable stores the refractive index in the current and previous z plane
+    index_rolling = np.zeros((xy_cells,xy_cells,2),dtype=np.float32)
+
     for i in range(current_step,current_step+steps):
         # I'm not sure whether ax=0 or ax=1 is x derivative, but we're adding the two anyway, so...
+
+        E_Delta_Ln_n_x = 
+
         d2Udx2 = (np.roll(U[:,:,1],1,axis=0)+np.roll(U[:,:,1],-1,axis=0)-2*U[:,:,1])
         d2Udy2 = (np.roll(U[:,:,1],1,axis=1)+np.roll(U[:,:,1],-1,axis=1)-2*U[:,:,1])
         U[:,:,2] = absorption_profile*(2*U[:,:,1]-U[:,:,0]-(dz_dx**2)*(d2Udx2+d2Udy2)-(dz*k0*index[:,:,i%unique_layers])**2*U[:,:,1])
