@@ -251,3 +251,48 @@ def propagate_FiniteDifference(U, A, distance, current_step, dx, dz, xy_cells, i
     
     
     return U, A, Field_snapshots, current_step
+
+def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True):
+    
+    # This has the same problem: If dx < lambda/sqrt(2), the field blows up.
+    # Implementation follows Eq. 3-8 in Goodman Fourier Optics
+
+    indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+    f = 1/(dx*xy_cells)*indices
+    k0 = 2*np.pi/wavelength
+    steps = int(distance/dz)
+    fxfx,fyfy = np.meshgrid(f,f)
+    
+    
+    # Absorption boundary condition profile = complex part of index
+    xy_range = dx*xy_cells/2
+    xx, yy = np.meshgrid(dx*indices,dx*indices)
+    absorption_profile = np.exp((-dz*Absorption_strength*(np.exp((np.abs(xx)-xy_range)/absorption_padding) + np.exp((np.abs(yy)-xy_range)/absorption_padding))))
+    # Cannot use imaginary index because it makes the equation numerically unstable. If necessary, apply this profile after U[:,:,2] is calculated as
+    # U[:,:,2] = exp(-alpha*dz)*U[:,:,2]
+    unique_layers = np.shape(index)[2]
+    dz_dx = dz/dx
+    
+    # Masking evanescent fields
+    f = 1/(dx*xy_cells)*indices
+    fxfx,fyfy = np.meshgrid(f,f)
+    mask = ((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
+
+    for i in range(current_step,current_step+steps):
+        # I'm not sure whether ax=0 or ax=1 is x derivative, but we're adding the two anyway, so...
+        d2Udx2 = (np.roll(U[:,:,1],1,axis=0)+np.roll(U[:,:,1],-1,axis=0)-2*U[:,:,1])
+        d2Udy2 = (np.roll(U[:,:,1],1,axis=1)+np.roll(U[:,:,1],-1,axis=1)-2*U[:,:,1])
+        U[:,:,2] = absorption_profile*(2*U[:,:,1]-U[:,:,0]-(dz_dx**2)*(d2Udx2+d2Udy2)-(dz*k0*index[:,:,i%unique_layers])**2*U[:,:,1])
+        
+        if suppress_evanescent:
+            U[:,:,2] =  iFFT2(mask*FFT2(U[:,:,2]))
+
+        U[:,:,0] = U[:,:,1]
+        U[:,:,1] = U[:,:,2]
+        
+        current_step = current_step + 1
+    
+    
+    
+    
+    return U, A, Field_snapshots, current_step

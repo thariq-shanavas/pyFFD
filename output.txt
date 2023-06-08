@@ -1,0 +1,463 @@
+Last login: Fri Apr 28 13:49:54 on ttys001
+thariq@kelpie ~ % cd Code/Python/TissueBeamPropagation        
+thariq@kelpie TissueBeamPropagation % source tissuebeampropagation/bin/activate
+(tissuebeampropagation) thariq@kelpie TissueBeamPropagation % python3 ParallelTightFocusContrastVsDepth.py
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 18.2
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 589.1 nm
+Null contrast is 14.9
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 15.1
+Beam center at 81.7 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 13.6
+Beam center at 81.7 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 14.5
+Beam center at 81.7 nm, 0.0 nm
+Spot size is 730.7 nm
+Null contrast is 14.4
+Beam center at 81.7 nm, 0.0 nm
+Spot size is 817.0 nm
+LG results
+[14.38924656 14.45717831 13.6447586  15.07101701 14.93010299 18.15933   ]
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 17.0
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 693.2 nm
+Null contrast is 13.3
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 12.0
+Beam center at 81.7 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 11.0
+Beam center at 81.7 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 12.4
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 13.6
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+HG results
+[13.56319298 12.41556368 11.02976123 12.00588351 13.29418316 17.04431156]
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 23.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 23.1
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 21.9
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 833.2 nm
+Null contrast is 19.3
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 730.7 nm
+Null contrast is 24.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 21.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 879.9 nm
+LG results
+[21.65589482 24.66966073 19.34647836 21.88724436 23.08053744 23.68495561]
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 26.5
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 589.1 nm
+Null contrast is 24.3
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 693.2 nm
+Null contrast is 21.4
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 19.5
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 19.2
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 730.7 nm
+Null contrast is 19.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 833.2 nm
+HG results
+[19.70313399 19.21184264 19.46415544 21.41494999 24.28775919 26.50672808]
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 25.3
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 589.1 nm
+Null contrast is 19.8
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 693.2 nm
+Null contrast is 19.6
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 730.7 nm
+Null contrast is 17.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 730.7 nm
+Null contrast is 17.8
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 730.7 nm
+Null contrast is 17.3
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 833.2 nm
+LG results
+[17.32407566 17.78055418 17.71380854 19.57279793 19.77596182 25.31364249]
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 23.8
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 589.1 nm
+Null contrast is 18.4
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 18.1
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 17.8
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 16.0
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 16.0
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 730.7 nm
+HG results
+[16.01520195 16.03526393 17.80086018 18.06170609 18.42011209 23.7748339 ]
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 20.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 19.9
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 730.7 nm
+Null contrast is 20.0
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 730.7 nm
+Null contrast is 18.3
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+Null contrast is 18.2
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 19.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 673.7 nm
+LG results
+[19.70921884 18.20810066 18.31523575 19.95048307 19.94061135 20.67928529]
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 22.4
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 589.1 nm
+Null contrast is 21.6
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 693.2 nm
+Null contrast is 21.2
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 19.5
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 20.4
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 21.2
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+HG results
+[21.24881542 20.35057818 19.48944089 21.16442671 21.55005791 22.35121757]
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Minimum samples: 216
+Objective lens NA should be (at least) 0.55
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 21.0
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 17.6
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 21.3
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 653.6 nm
+Null contrast is 28.4
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 27.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 26.1
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+LG results
+[26.07846491 27.70632724 28.36635265 21.29830331 17.59461918 20.96931508]
+Minimum samples: 476
+Objective lens NA should be (at least) 0.55
+Tissue depth 55.0 um. Expected spot size at start of FDFD region is 41.81 um, simulation cross section is 83.66 um
+Minimum samples: 130
+Objective lens NA should be (at least) 0.55
+Tissue depth 15.0 um. Expected spot size at start of FDFD region is 11.43 um, simulation cross section is 83.66 um
+Minimum samples: 389
+Objective lens NA should be (at least) 0.55
+Tissue depth 45.0 um. Expected spot size at start of FDFD region is 34.21 um, simulation cross section is 83.66 um
+Minimum samples: 43
+Objective lens NA should be (at least) 0.55
+Tissue depth 5.0 um. Expected spot size at start of FDFD region is 3.89 um, simulation cross section is 83.66 um
+Minimum samples: 216
+Minimum samples: 303
+Objective lens NA should be (at least) 0.55
+Objective lens NA should be (at least) 0.55
+Tissue depth 35.0 um. Expected spot size at start of FDFD region is 26.61 um, simulation cross section is 83.66 um
+Tissue depth 25.0 um. Expected spot size at start of FDFD region is 19.02 um, simulation cross section is 83.66 um
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Discretization changed from 4882.8 nm to 81.7 nm
+Null contrast is 21.4
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 589.1 nm
+Null contrast is 19.1
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 693.2 nm
+Null contrast is 21.8
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 24.2
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 24.7
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 817.0 nm
+Null contrast is 21.4
+Beam center at 0.0 nm, 0.0 nm
+Spot size is 833.2 nm
+HG results
+[21.40924977 24.68395278 24.24918249 21.77156228 19.07593842 21.39801916]
+LG results final
+[[14.38924656 21.65589482 17.32407566 19.70921884 26.07846491]
+ [14.45717831 24.66966073 17.78055418 18.20810066 27.70632724]
+ [13.6447586  19.34647836 17.71380854 18.31523575 28.36635265]
+ [15.07101701 21.88724436 19.57279793 19.95048307 21.29830331]
+ [14.93010299 23.08053744 19.77596182 19.94061135 17.59461918]
+ [18.15933    23.68495561 25.31364249 20.67928529 20.96931508]]
+HG results final
+[[13.56319298 19.70313399 16.01520195 21.24881542 21.40924977]
+ [12.41556368 19.21184264 16.03526393 20.35057818 24.68395278]
+ [11.02976123 19.46415544 17.80086018 19.48944089 24.24918249]
+ [12.00588351 21.41494999 18.06170609 21.16442671 21.77156228]
+ [13.29418316 24.28775919 18.42011209 21.55005791 19.07593842]
+ [17.04431156 26.50672808 23.7748339  22.35121757 21.39801916]]
+--- 25185.35 seconds ---
+(tissuebeampropagation) thariq@kelpie TissueBeamPropagation % /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/resource_tracker.py:216: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+
+(tissuebeampropagation) thariq@kelpie TissueBeamPropagation % 
