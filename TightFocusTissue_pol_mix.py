@@ -2,7 +2,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from FriendlyFourierTransform import FFT2, iFFT2
-from PropagationAlgorithm import propagate, propagate_Fourier, propagate_FiniteDifference
+from PropagationAlgorithm import propagate, propagate_Fourier, propagate_FiniteDifference, Vector_FiniteDifference
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 from FieldPlots import PlotSnapshots, VortexNull
 from GenerateRandomTissue import RandomTissue
@@ -110,43 +110,24 @@ imaging_depth_indices = []
 #kxkx, kyky = np.meshgrid(dk*indices,dk*indices)
 #H = np.exp(1j*dz*np.emath.sqrt((k)**2-kxkx**2-kyky**2))     # Fast Fourier propagator
 Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
-Az = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+#Az = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
-Ay = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+#Ay = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
-Ax = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+#Ax = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
 # Uniform index for now TODO: Change this
 #n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
 n = RandomTissue(xy_cells, wavelength, target_dx, dz, n_h, ls, g,unique_layers)
 ## For first two steps of Ex
 Uz[:,:,0] = Ez
-Az[:,:,0] = FFT2(Uz[:,:,0])
-
 Uz[:,:,1] = Ez2
-Az[:,:,1] = FFT2(Uz[:,:,1])
-
-current_step = 2
-Uz,Az, _, _ = propagation_algorithm(Uz, Az,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
-
 Uy[:,:,0] = Ey
-Ay[:,:,0] = FFT2(Uz[:,:,0])
-
 Uy[:,:,1] = Ey2
-Ay[:,:,1] = FFT2(Uz[:,:,1])
-
-current_step = 2
-Uy,Ay, _, _ = propagation_algorithm(Uy, Ay,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
-
 Ux[:,:,0] = Ex
-Ax[:,:,0] = FFT2(Uz[:,:,0])
-
 Ux[:,:,1] = Ex2
-Ax[:,:,1] = FFT2(Uz[:,:,1])
 
-current_step = 2
-Ux,Ax, _, _ = propagation_algorithm(Ux, Ax,FDFD_depth, current_step, dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
-
+Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, dx, dz, xy_cells, n, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
 
 # Stuff at focus
 Exf,Eyf,Ezf,_ = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,0,target_dx)

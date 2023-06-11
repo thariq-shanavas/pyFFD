@@ -28,7 +28,7 @@ if 2*beam_radius > dx*xy_cells:
 if beam_radius<50*dx:
     raise ValueError('Sampling too coarse. Decrease dx')
 
-beam_type = 'HG' # 'HG, 'LG', 'G'
+beam_type = 'G' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
@@ -38,7 +38,8 @@ elif beam_type=='HG':
     seed_y = HG_beam(xy_cells, dx, beam_radius, u,v)
     seed_x = np.zeros(seed_y.shape)
 else:
-    seed = Gaussian_beam(xy_cells, dx, beam_radius)
+    seed_y = Gaussian_beam(xy_cells, dx, beam_radius)
+    seed_x = np.zeros(np.shape(seed_y))
 
 Ex,Ey,Ez,dx_TightFocus = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,MeasurementPlane_z=1e-6,target_dx=10e-9)
 
