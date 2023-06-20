@@ -281,7 +281,12 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, absor
     # Masking evanescent fields
     f = 1/(dx*xy_cells)*indices
     fxfx,fyfy = np.meshgrid(f,f)
-    mask = ((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
+    #mask = ((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
+
+    ## Type 2 Fourier mask
+    alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-1/wavelength**2,0))
+    mask = np.exp(-alpha*dz)
+
 
     # Reserving memory for copying the refractive index to a new variable
     # This variable stores the refractive index in the current and previous z plane

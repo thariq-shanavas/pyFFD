@@ -117,7 +117,7 @@ Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 #Ax = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
 # Uniform index for now TODO: Change this
-#n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
+n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
 n = RandomTissue(xy_cells, wavelength, target_dx, dz, n_h, ls, g,unique_layers)
 ## For first two steps of Ex
 Uz[:,:,0] = Ez
