@@ -2,7 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from numba import jit, njit
+from rocket_fft import numpy_like, scipy_like
 
+numpy_like()
+
+#@jit(forceobj=True)
+@njit
 def FFT2(U):
     # Friendly Fourier transform.
     # np.fft.fft assumes the x axis is from 0 to x; N samples and gives the FFT from freq. 0 to 1/dx, with N samples in between
@@ -17,6 +23,8 @@ def FFT2(U):
     #df = 1/(dx*xy_cells)
     return np.fft.fftshift(np.fft.fft2(np.fft.fftshift(U)))
 
+#@jit(forceobj=True)
+@njit
 def iFFT2(A):
     # Friendly inverse Fourier transform.
     # For max. efficiency, set N as a power of 2.

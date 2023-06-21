@@ -7,6 +7,7 @@ from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 from FieldPlots import PlotSnapshots, VortexNull
 from GenerateRandomTissue import RandomTissue
 from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
+import numba
 
 
 start_time = time.time()
@@ -14,13 +15,12 @@ plt.rcParams['figure.dpi']= 150
 plt.rcParams.update({'font.size': 4})
 plt.rcParams['pcolor.shading'] = 'auto'
 
-propagation_algorithm = propagate_FiniteDifference
 suppress_evanescent = True
 
 # Simulation parameters
 beam_radius = 1e-3 #2.65e-3
 focus_depth = 3.5e-3
-FDFD_depth = 5e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
+FDFD_depth = 25e-6 #5e-6       # Debye-Wolf integral to calculate field at focus_depth-FDFD_depth, then FDFD to focus
 
 wavelength = 500e-9
 xy_cells = 512    # Keep this a power of 2 for efficient FFT
@@ -70,7 +70,7 @@ else:
     xx,yy = np.meshgrid(dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_),dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_))
     seed = (xx**2+yy**2<beam_radius**2).astype(float)
 plt.pcolormesh(np.abs(seed_x)**2+np.abs(seed_y**2))
-plt.show()
+# plt.show()
 if beam_type=='G':
     print('Expected spot size: %1.3f um' %(expected_spot_size*10**6))
 
@@ -97,7 +97,7 @@ ax2.title.set_text("Hand off Ey")
 ax3.pcolormesh(axis,axis,np.abs(Ez))
 ax3.title.set_text("Hand off Ez")
 plt.gca().set_aspect('equal')
-plt.show()
+# plt.show()
 # FDFD Propagation
 Total_steps = int(FDFD_depth/dz)+2
 imaging_depth = [] # Take snapshots at these depths
@@ -118,7 +118,7 @@ Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
 # Uniform index for now TODO: Change this
 n = n_h*np.ones((xy_cells,xy_cells,unique_layers),dtype=np.float_)
-n = RandomTissue(xy_cells, wavelength, target_dx, dz, n_h, ls, g,unique_layers)
+#n = RandomTissue(xy_cells, wavelength, target_dx, dz, n_h, ls, g,unique_layers)
 ## For first two steps of Ex
 Uz[:,:,0] = Ez
 Uz[:,:,1] = Ez2
@@ -127,7 +127,7 @@ Uy[:,:,1] = Ey2
 Ux[:,:,0] = Ex
 Ux[:,:,1] = Ex2
 
-Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, dx, dz, xy_cells, n, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
+Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, dx, dz, xy_cells, n, wavelength, suppress_evanescent)
 
 # Stuff at focus
 Exf,Eyf,Ezf,_ = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
