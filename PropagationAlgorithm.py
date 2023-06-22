@@ -284,7 +284,7 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, absor
     #mask = ((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
 
     ## Type 2 Fourier mask
-    alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-1/wavelength**2,0))
+    alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-np.average(index-0.1)**2/wavelength**2,0))
     mask = np.exp(-alpha*dz)
 
 
