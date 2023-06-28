@@ -1,9 +1,10 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-from PropagationAlgorithm import Vector_FiniteDifference
-from SeedBeams import LG_OAM_beam, HG_beam
-from FieldPlots import VortexNull
+from FriendlyFourierTransform import FFT2, iFFT2
+from PropagationAlgorithm import propagate, propagate_Fourier, propagate_FiniteDifference
+from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
+from FieldPlots import PlotSnapshots, VortexNull
 from GenerateRandomTissue import RandomTissue
 from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from multiprocessing import Pool, shared_memory
@@ -12,38 +13,26 @@ plt.rcParams['figure.dpi']= 3600
 plt.rcParams.update({'font.size': 4})
 plt.rcParams['pcolor.shading'] = 'auto'
 
-propagation_algorithm = Vector_FiniteDifference
+propagation_algorithm = propagate_FiniteDifference
 suppress_evanescent = True
 
 # Simulation parameters
 beam_radius = 1e-3
-focus_depth = 3.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
-depths = 1e-6*np.array([55,45,35,25,15,5])      # Calculate the contrast at these tissue depths
+focus_depth = 3.5e-3
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+shared_mem_name = 'TissueMatrix2048x30'
+wavelength = 500e-9
+target_dx = 817e-10   # Target dx for debye-wolf calc output. Set this such that beam radius at beginning of FD region fills the sim cross section
+dz = 15e-9
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
-
-
-xy_cells = 1024    # Keep this a power of 2 for efficient FFT
-shared_mem_name = 'TissueMatrix2048x30'     # Just a name for a shared memory space.
-wavelength = 500e-9
-
-
-# Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
-# We need to keep the dx same for all tissue depths to avoid bias from sampling resolution.
-# So we use the smallest dx that would work for all depths we are interested in.
-
-expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,np.max(depths))
-target_dx = expected_spot_size*2/xy_cells   # Target dx for debye-wolf calc output
-dz = 25e-9
-
-if dz/target_dx > 0.5 or dz>wavelength/10:
-    raise ValueError('Reduce dz!')
-
 unique_layers = 70    # Unique layers of index for procedural generation of tissue index. Unclear what's the effect of making this small.
 
 # Other parameters - do not change
 dx = 5*beam_radius/(xy_cells) 
+absorption_padding = 5*dx # Thickness of absorbing boundary
+Absorption_strength = 10
 
 def Tightfocus_HG(depth):
     FDFD_depth = depth
@@ -58,12 +47,19 @@ def Tightfocus_HG(depth):
             
     NA = n_h*1.5*beam_radius/focus_depth
     min_N = 4*NA**2*np.abs(FDFD_depth)/(np.sqrt(n_h**2-NA**2)*wavelength)
+    print('Minimum samples: %1.0f' %(4*min_N))
+    expected_spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)  # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
+    print('Tissue depth %1.1f um. Expected spot size at start of FDFD region is %1.2f um, simulation cross section is %1.2f um' %(10**6*depth, 10**6*expected_spot_size,xy_cells*target_dx*10**6))
 
     if xy_cells<4*min_N:
         raise ValueError('Increase resolution!')
 
     Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,target_dx,4096)
-    Ex2,Ey2,Ez2,dx = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx,4096)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,target_dx,4096)
+    print('Discretization changed from %1.1f nm to %1.1f nm'  %(dx*10**9,target_dx*10**9))
+
+    imaging_depth = [] # Take snapshots at these depths
+    imaging_depth_indices = []
 
     Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
@@ -76,7 +72,10 @@ def Tightfocus_HG(depth):
     Ux[:,:,0] = Ex
     Ux[:,:,1] = Ex2
 
-    Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, dx, dz, xy_cells, n, wavelength, suppress_evanescent)
+    current_step = 2
+    Uz,_, _, _ = propagation_algorithm(Uz, 0,FDFD_depth, current_step, target_dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
+    Uy,_, _, _ = propagation_algorithm(Uy, 0,FDFD_depth, current_step, target_dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
+    Ux,_, _, _ = propagation_algorithm(Ux, 0,FDFD_depth, current_step, target_dx, dz, xy_cells, n, imaging_depth_indices, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
 
     Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
@@ -184,6 +183,7 @@ def Tightfocus_LG(depth):
 
 if __name__ == '__main__':
     start_time = time.time()
+    depths = 1e-6*np.array([55,45,35,25,15,5])
     shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
     p = Pool(6)
     num_runs = 5

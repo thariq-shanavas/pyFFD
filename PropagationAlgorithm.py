@@ -254,7 +254,7 @@ def propagate_FiniteDifference(U, A, distance, current_step, dx, dz, xy_cells, i
     
     return U, A, Field_snapshots, current_step
 
-def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, absorption_padding, Absorption_strength, wavelength, suppress_evanescent = True):
+def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavelength, suppress_evanescent = True):
     
     # This has the same problem: If dx < lambda/sqrt(2), the field blows up.
     # Implementation follows Eq. 3-8 in Goodman Fourier Optics
