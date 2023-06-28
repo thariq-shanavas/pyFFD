@@ -127,7 +127,7 @@ Uy[:,:,1] = Ey2
 Ux[:,:,0] = Ex
 Ux[:,:,1] = Ex2
 
-Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, dx, dz, xy_cells, n, absorption_padding, Absorption_strength, wavelength, suppress_evanescent)
+Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, dx, dz, xy_cells, n, wavelength, suppress_evanescent)
 
 # Stuff at focus
 Exf,Eyf,Ezf,_ = TightFocus(seed_x,seed_y,dx_seed,wavelength,n_h,focus_depth,0,target_dx)
