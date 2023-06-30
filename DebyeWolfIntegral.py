@@ -178,7 +178,7 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
 
 def SpotSizeCalculator(FocusDepth,BeamRadius,n_homogenous,wavelength,MeasurementPlane_z):
     NA = n_homogenous*1.5*BeamRadius/np.sqrt(BeamRadius**2+FocusDepth**2)
-    print('Objective lens NA should be (at least) %1.2f' %(NA))
+    #print('Objective lens NA should be (at least) %1.2f' %(NA))
     w0 = wavelength*FocusDepth/(n_homogenous*np.pi*BeamRadius)
     RayleighLength = np.pi*w0**2/wavelength
     geometric_width = 2*BeamRadius*np.abs(MeasurementPlane_z)/FocusDepth
