@@ -53,20 +53,17 @@ def VortexNull(Field, dx, beam_type, cross_sections = 19, num_samples = 1000, fi
 
     # Defining an interpolation function to be used later
     # Interpolation is defined using a coordinate system with origin at the middle.
-    Field_interpolation = interpolate.interp2d(dx*indices, dx*indices, np.abs(Field), kind='cubic', copy=True, bounds_error = True)
+    Field_interpolation = interpolate.interp2d(dx*indices, dx*indices, np.abs(Field), kind='linear', copy=True, bounds_error = True)
     Field_cross_sections = np.zeros((num_samples,cross_sections))
     Field = np.abs(Field)
 
     if beam_type=='LG' or beam_type=='HG':
-        # Find the coordinates of the center of the null
-        smoothened_field = gaussian_filter(Field.astype(float), sigma=filter_sigma)
-        mask = xx**2+yy**2>(beam_radius)**2
-        smoothened_field[mask] = np.max(smoothened_field)
-
-        # Note the order of beam_center_y and beam_center_x
-        beam_center_y,beam_center_x = np.unravel_index(np.abs(smoothened_field).argmin(), np.abs(smoothened_field).shape)
-        beam_center_x = dx*(beam_center_x - xy_cells/2)
-        beam_center_y = dx*(beam_center_y - xy_cells/2)
+        # Find the coordinates of the center of the null, within a central 3x3 square
+        Field = np.abs(Field.astype(float))
+        central_3x3 = Field[int(xy_cells/2-1):int(xy_cells/2+2),int(xy_cells/2-1):int(xy_cells/2+2)]
+        arg_min = np.unravel_index(central_3x3.argmin(), central_3x3.shape)
+        beam_center_x = dx*(arg_min[0] - 1)
+        beam_center_y = dx*(arg_min[1] - 1)
         
     elif beam_type=='G':
         smoothened_field = gaussian_filter(Field.astype(float), sigma=filter_sigma)

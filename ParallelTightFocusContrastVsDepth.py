@@ -10,13 +10,6 @@ from multiprocessing import Pool, shared_memory
 from scipy.interpolate import RegularGridInterpolator
 
 
-# TODO: Set suppress_evanescent = false if resoplution is low enough for massive speedup.
-# TODO: Double check FD solver runs the currect number of times.
-# TODO: Interpolation used to measure contrast
-# TODO: Use minimum of central 9 points for vortex contrast
-
-propagation_algorithm = Vector_FiniteDifference
-suppress_evanescent = True
 
 # Simulation parameters
 beam_radius = 1e-3
@@ -56,16 +49,24 @@ unique_layers = 70    # Unique layers of index for procedural generation of tiss
 # Other parameters - do not change
 dx = 5*beam_radius/(xy_cells) 
 
-def Tightfocus_HG(args):
+if FDFD_dx > wavelength/((n_h+0.1)*1.41):     # If resolution > lambda/sqrt(2), Evanescent fields blow up. 0.1 adds a small margin of error.
+    suppress_evanescent = False
+else:
+    suppress_evanescent = True
 
-    plt.rcParams['figure.dpi']= 300
-    plt.rcParams.update({'font.size': 4})
-    plt.rcParams['pcolor.shading'] = 'auto'
+def Tightfocus_HG(args):
+    
     fig = plt.figure()
+    plt.gcf().set_dpi(500)
+    plt.rcParams.update({'font.size': 5})
+    plt.rcParams['pcolor.shading'] = 'auto'
+    plt.rcParams["font.weight"] = "bold"
+    plt.rcParams["axes.labelweight"] = "bold"
+    #plt.rcParams["axes.linewidth"] = 2
+    
     ax1 = fig.add_subplot(1,3,1, adjustable='box', aspect=1)
     ax2 = fig.add_subplot(1,3,2, adjustable='box', aspect=1)
     ax3 = fig.add_subplot(1,3,3, adjustable='box', aspect=1)
-    
     
     FDFD_depth = args[0]
     shared_mem_name = args[1]
@@ -105,7 +106,9 @@ def Tightfocus_HG(args):
     HG10_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
     ax1.pcolormesh(imaging_axes,imaging_axes,RegularGridInterpolator((axis,axis),HG10_Focus_Intensity, bounds_error = True, method='linear')((xx_imaging, yy_imaging)))
-    ax1.title.set_text("HG 10 at focus")
+    ax1.set_title('HG 10 beam at focus', fontweight='bold')
+    ax1.set_xlabel("x ($µm$)", fontweight='bold')
+    ax1.set_ylabel("y ($µm$)", fontweight='bold')
         
     #### Second HG beam ####
 
@@ -126,12 +129,17 @@ def Tightfocus_HG(args):
     HG01_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
     ax2.pcolormesh(imaging_axes,imaging_axes,RegularGridInterpolator((axis,axis),HG01_Focus_Intensity, bounds_error = True, method='linear')((xx_imaging, yy_imaging)))
-    ax2.title.set_text("HG 01 at focus")
+    ax2.set_title('HG 01 beam at focus', fontweight='bold')
+    ax2.set_xlabel("x ($µm$)", fontweight='bold')
+    ax2.set_ylabel("y ($µm$)", fontweight='bold')
 
     Focus_Intensity = HG01_Focus_Intensity+HG10_Focus_Intensity
     ax3.pcolormesh(imaging_axes,imaging_axes,RegularGridInterpolator((axis,axis),Focus_Intensity , bounds_error = True, method='linear')((xx_imaging, yy_imaging)))
-    ax3.title.set_text("Incoherent Donut")
+    ax3.set_title('HG 01 + HG 10 (Incoherent Donut)', fontweight='bold')
+    ax3.set_xlabel("x ($µm$)", fontweight='bold')
+    ax3.set_ylabel("y ($µm$)", fontweight='bold')
 
+    plt.tight_layout()
     plt.savefig('Results/HG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png')
     plt.close()
 
@@ -142,9 +150,12 @@ def Tightfocus_LG(args):
     
     fig = plt.figure()
     plt.gca().set_aspect('equal')
-    plt.rcParams['figure.dpi']= 300
-    plt.rcParams.update({'font.size': 8})
+    plt.gcf().set_dpi(500)
+    plt.rcParams.update({'font.size': 12})
     plt.rcParams['pcolor.shading'] = 'auto'
+    plt.rcParams["font.weight"] = "bold"
+    plt.rcParams["axes.labelweight"] = "bold"
+    plt.rcParams["axes.linewidth"] = 2
     
     FDFD_depth = args[0]
     shared_mem_name = args[1]
@@ -183,8 +194,13 @@ def Tightfocus_LG(args):
     LG_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
     plt.pcolormesh(imaging_axes,imaging_axes,RegularGridInterpolator((axis,axis),LG_Focus_Intensity, bounds_error = True, method='linear')((xx_imaging, yy_imaging)))
-    plt.title("LG at focus")
+    plt.title("LG beam at focus", weight='bold')
+    plt.xlabel("x ($µm$)", weight='bold', fontsize=12)
+    plt.xticks(weight = 'bold', fontsize=12)
+    plt.ylabel("y ($µm$)", weight='bold', fontsize=12)
+    plt.yticks(weight = 'bold', fontsize=12)
     
+    plt.tight_layout()
     plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png')
     plt.close()
 
@@ -198,10 +214,10 @@ shared_mem_name = 'Shared_test_block'
 try:
     shm = shared_memory.SharedMemory(name=shared_mem_name,create=True, size=shared_memory_bytes)
 except FileExistsError:
-    shm = shared_memory.SharedMemory(name=shared_mem_name,create=True, size=shared_memory_bytes)
+    shm = shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes)
 n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
 n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
-Tightfocus_HG([5e-6, shared_mem_name, 10])
+Tightfocus_LG([5e-6, shared_mem_name, 10])
 
 '''
 if __name__ == '__main__':
@@ -228,7 +244,7 @@ if __name__ == '__main__':
             try:
                 shared_memory_blocks.append(shared_memory.SharedMemory(name=shared_mem_name,create=True, size=shared_memory_bytes))
             except FileExistsError:
-                shared_memory_blocks.append(shared_memory.SharedMemory(name=shared_mem_name,create=True, size=shared_memory_bytes))
+                shared_memory_blocks.append(shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes))
             n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shared_memory_blocks[-1].buf)
             n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
 
