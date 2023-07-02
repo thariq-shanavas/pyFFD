@@ -11,6 +11,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 
 # TODO: Automatically determine as many parameters as possible.
+# TODO: Median instead of mean for determining contrast
 
 # Simulation parameters
 beam_radius = 1e-3
