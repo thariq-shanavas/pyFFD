@@ -10,30 +10,32 @@ from multiprocessing import Pool, shared_memory
 from scipy.interpolate import RegularGridInterpolator
 
 
+# TODO: Automatically determine as many parameters as possible.
 
 # Simulation parameters
 beam_radius = 1e-3
 focus_depth = 3.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
 depths = np.array([35e-6,25e-6,15e-6,5e-6])      # Calculate the contrast at these tissue depths
-# depths = 1e-6*np.array([10, 5])      # Calculate the contrast at these tissue depths
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
-dz = 25e-9
+
+FDFD_dx = 80e-9     # Recommended to keep this below 50 nm ideally.
+dz = FDFD_dx * 0.6
+unique_layers = 70    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
 
 
-xy_cells = 256    # Keep this a power of 2 for efficient FFT
-# shared_mem_name = 'TissueMatrix2048x30'     # Just a name for a shared memory space.
+# xy_cells = 256    # Keep this a power of 2 for efficient FFT
 wavelength = 500e-9
 
 
 # Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
 # We need to keep the dx same for all tissue depths to avoid bias from sampling resolution.
 # So we use the smallest dx that would work for all depths we are interested in.
-
 max_spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,np.max(depths))
-FDFD_dx = max_spot_size_at_start_of_FDFD_volume*2/xy_cells   # Target dx for debye-wolf calc output
-
+# FDFD_dx = max_spot_size_at_start_of_FDFD_volume*1.5/xy_cells   # Target dx for debye-wolf calc output
+xy_cells = int(2**np.ceil(np.log2(max_spot_size_at_start_of_FDFD_volume*1.5/FDFD_dx)))
+# Parameters for saving the images to Results folder.
 spot_size_at_focus = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)   # For plotting
 imaging_dx = spot_size_at_focus*6/xy_cells
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -41,10 +43,9 @@ axis = 10**6*FDFD_dx*indices
 imaging_axes = 10**6*imaging_dx*indices
 xx_imaging, yy_imaging = np.meshgrid(imaging_axes,imaging_axes, indexing='ij')  # Mesh grid used for plotting
 
-if dz/FDFD_dx > 0.5 or dz>wavelength/10:
-    raise ValueError('Reduce dz!')
 
-unique_layers = 70    # Unique layers of index for procedural generation of tissue index. Unclear what's the effect of making this small.
+if dz>FDFD_dx  or dz>wavelength/10:
+    raise ValueError('Reduce dz!')
 
 # Other parameters - do not change
 dx = 5*beam_radius/(xy_cells) 
@@ -144,6 +145,7 @@ def Tightfocus_HG(args):
     plt.close()
 
     Contrast,_ = VortexNull(Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
+    existing_shm.close()
     return Contrast
 
 def Tightfocus_LG(args):
@@ -205,10 +207,12 @@ def Tightfocus_LG(args):
     plt.close()
 
     Contrast,_ = VortexNull(LG_Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
+    existing_shm.close()
     return Contrast
 
 
 #### Test block ####
+print('Cell size is ' + str(xy_cells))
 shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)
 shared_mem_name = 'Shared_test_block'
 try:
@@ -218,7 +222,7 @@ except FileExistsError:
 n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
 n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
 Tightfocus_LG([5e-6, shared_mem_name, 10])
-
+shm.unlink()
 '''
 if __name__ == '__main__':
     start_time = time.time()
