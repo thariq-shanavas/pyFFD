@@ -8,6 +8,7 @@ from GenerateRandomTissue import RandomTissue
 from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from multiprocessing import Pool, shared_memory
 from scipy.interpolate import RegularGridInterpolator
+import copy
 
 
 # TODO: Automatically determine as many parameters as possible.
@@ -21,12 +22,9 @@ n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 
-FDFD_dx = 80e-9     # Recommended to keep this below 50 nm ideally.
+FDFD_dx = 70e-9     # Recommended to keep this below 50 nm ideally.
 dz = FDFD_dx * 0.6
-unique_layers = 70    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
-
-
-# xy_cells = 256    # Keep this a power of 2 for efficient FFT
+unique_layers = 100    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
 wavelength = 500e-9
 
 
@@ -34,8 +32,8 @@ wavelength = 500e-9
 # We need to keep the dx same for all tissue depths to avoid bias from sampling resolution.
 # So we use the smallest dx that would work for all depths we are interested in.
 max_spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,np.max(depths))
-# FDFD_dx = max_spot_size_at_start_of_FDFD_volume*1.5/xy_cells   # Target dx for debye-wolf calc output
 xy_cells = int(2**np.ceil(np.log2(max_spot_size_at_start_of_FDFD_volume*1.5/FDFD_dx)))
+
 # Parameters for saving the images to Results folder.
 spot_size_at_focus = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)   # For plotting
 imaging_dx = spot_size_at_focus*6/xy_cells
@@ -44,17 +42,34 @@ axis = 10**6*FDFD_dx*indices
 imaging_axes = 10**6*imaging_dx*indices
 xx_imaging, yy_imaging = np.meshgrid(imaging_axes,imaging_axes, indexing='ij')  # Mesh grid used for plotting
 
-
-if dz>FDFD_dx  or dz>wavelength/10:
+if dz>FDFD_dx or dz>wavelength/10:
     raise ValueError('Reduce dz!')
 
 # Other parameters - do not change
-dx = 5*beam_radius/(xy_cells) 
+dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
 
 if FDFD_dx > wavelength/((n_h+0.1)*1.41):     # If resolution > lambda/sqrt(2), Evanescent fields blow up. 0.1 adds a small margin of error.
     suppress_evanescent = False
 else:
     suppress_evanescent = True
+
+class Results:
+    # Saves results for all depths, for one instantiation of the tissue.
+    def __init__(self, contrasts, contrast_std_deviations):
+        self.depths = depths
+        self.contrasts = contrasts
+        self.contrast_std_deviations = contrast_std_deviations
+        self.wavelength = wavelength
+        self.FDFD_dx = FDFD_dx
+        self.dz = dz
+        self.beam_radius = beam_radius
+        self.focus_depth = focus_depth
+        self.unique_layers = unique_layers
+        self.n_h = n_h
+        self.ls = ls
+        self.g = g
+        self.xy_cells = xy_cells
+
 
 def Tightfocus_HG(args):
     
@@ -64,12 +79,12 @@ def Tightfocus_HG(args):
     plt.rcParams['pcolor.shading'] = 'auto'
     plt.rcParams["font.weight"] = "bold"
     plt.rcParams["axes.labelweight"] = "bold"
-    #plt.rcParams["axes.linewidth"] = 2
+    plt.rcParams["axes.linewidth"] = 1
     
     ax1 = fig.add_subplot(1,3,1, adjustable='box', aspect=1)
     ax2 = fig.add_subplot(1,3,2, adjustable='box', aspect=1)
     ax3 = fig.add_subplot(1,3,3, adjustable='box', aspect=1)
-    
+
     FDFD_depth = args[0]
     shared_mem_name = args[1]
     run_number = args[2]
@@ -111,7 +126,7 @@ def Tightfocus_HG(args):
     ax1.set_title('HG 10 beam at focus', fontweight='bold')
     ax1.set_xlabel("x ($µm$)", fontweight='bold')
     ax1.set_ylabel("y ($µm$)", fontweight='bold')
-        
+
     #### Second HG beam ####
 
     (u,v) = (0,1)   # Mode numbers for HG beam
@@ -145,9 +160,9 @@ def Tightfocus_HG(args):
     plt.savefig('Results/HG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png')
     plt.close()
 
-    Contrast,_ = VortexNull(Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
+    Contrast,Contrast_std_deviation = VortexNull(Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
     existing_shm.close()
-    return Contrast
+    return Contrast, Contrast_std_deviation
 
 def Tightfocus_LG(args):
     
@@ -163,7 +178,7 @@ def Tightfocus_LG(args):
     FDFD_depth = args[0]
     shared_mem_name = args[1]
     run_number = args[2]
-    
+
     beam_type = 'LG' # 'HG, 'LG', 'G'
 
     existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
@@ -207,12 +222,13 @@ def Tightfocus_LG(args):
     plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png')
     plt.close()
 
-    Contrast,_ = VortexNull(LG_Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
+    Contrast,Contrast_std_deviation = VortexNull(LG_Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
     existing_shm.close()
-    return Contrast
+    return Contrast, Contrast_std_deviation
 
 
 #### Test block ####
+'''
 print('Cell size is ' + str(xy_cells))
 shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)
 shared_mem_name = 'Shared_test_block'
@@ -222,24 +238,28 @@ except FileExistsError:
     shm = shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes)
 n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
 n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
-Tightfocus_LG([5e-6, shared_mem_name, 10])
+print(Tightfocus_LG([5e-6, shared_mem_name, 10]))
+print(Tightfocus_HG([5e-6, shared_mem_name, 10]))
 shm.unlink()
 '''
 if __name__ == '__main__':
     start_time = time.time()
+    print('Cell size is ' + str(xy_cells))
     shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
     p = Pool(12)                # Remember! This executes everything outside this if statement!
-    num_tissue_instances = 4    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
-    num_runs = 20               # Number of runs. Keep this a multiple of num_tissue_instances.
+    num_tissue_instances = 8    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
+    num_runs = 40               # Number of runs. Keep this a multiple of num_tissue_instances.
 
-    LG_result = np.zeros((6,num_runs))
-    HG_result = np.zeros((num_tissue_instances*len(depths),num_runs))
+    LG_result = []              # List of objects of class 'Results'
+    HG_result = []
+    tmp_contrasts_LG = np.zeros(len(depths))
+    tmp_contrast_std_deviation_LG = np.zeros(len(depths))
+    tmp_contrasts_HG = np.zeros(len(depths))
+    tmp_contrast_std_deviation_HG = np.zeros(len(depths))
     
     run_number = 0
     for iterator in range(int(num_runs/num_tissue_instances)):
         args = []
-        # This is necessary to prevent Python garbage collector from prematurely deleting shared memory blocks.
-        # The second time this line runs, it asks the garbage collector to release the shared memory used in the previous loop.
         shared_memory_blocks = []
 
         for tissue_instance_number in range(num_tissue_instances):
@@ -251,29 +271,34 @@ if __name__ == '__main__':
             except FileExistsError:
                 shared_memory_blocks.append(shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes))
             n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shared_memory_blocks[-1].buf)
-            n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
+            # n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
 
             for depth in depths:
                 args.append([depth, shared_mem_name, run_number])
+
+        unrolled_results_LG = p.map(Tightfocus_LG, args)               # We need to roll up the results into lists, with each list containing the contrast for all depths for a given instance of tissue.
+        unrolled_results_HG = p.map(Tightfocus_HG, args)
         
-        
-        LG_result[:,run_number] = p.map(Tightfocus_LG, args)
-        print('LG results')
-        print(LG_result[:,run_number])
+        tmp_index = 0
+        for tissue_instance_number in range(num_tissue_instances):  # For the sake of readbility, I'm not going to vectorize this step.
+            for i in range(len(depths)):
+                # This loop collects the resuls for all depths for a given tissue model into one list.
+                tmp_contrasts_LG[i] = unrolled_results_LG[tmp_index][0]
+                tmp_contrast_std_deviation_LG[i] = unrolled_results_LG[tmp_index][1]
 
-        #HG_result[:,run_number] = p.map(Tightfocus_HG, args)
-        #print('HG results')
-        #print(HG_result[:,run_number])
-    
-    print('LG results final')
-    print(LG_result)
+                tmp_contrasts_HG[i] = unrolled_results_HG[tmp_index][0]
+                tmp_contrast_std_deviation_HG[i] = unrolled_results_HG[tmp_index][1]
 
-    print('HG results final')
-    print(HG_result)
+                tmp_index = tmp_index + 1
 
-    np.save('Contrast_LG', LG_result)
-    np.save('Contrast_HG', HG_result)
+            # Garbage collector should automatically do this. However, some machines raise a memory leak warning if shared memory is not manually unlinked.
+            shared_memory_blocks[tissue_instance_number].unlink()
 
+            # Save results. The Results object is mutable in Python, so I need to deepcopy it.
+            LG_result.append(copy.deepcopy(Results(tmp_contrasts_LG,tmp_contrast_std_deviation_LG)))
+            HG_result.append(copy.deepcopy(Results(tmp_contrasts_HG,tmp_contrast_std_deviation_HG)))
+
+    np.save('Results/Contrast_LG', LG_result)
+    np.save('Results/Contrast_HG', HG_result)
 
     print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
-    '''
