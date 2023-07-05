@@ -10,13 +10,9 @@ from multiprocessing import Pool, shared_memory
 from scipy.interpolate import RegularGridInterpolator
 import copy
 
-
-# TODO: Automatically determine as many parameters as possible.
-# TODO: Median instead of mean for determining contrast
-
 # Simulation parameters
 beam_radius = 1e-3
-focus_depth = 3.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
+focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
 depths = np.array([35e-6,25e-6,15e-6,5e-6])      # Calculate the contrast at these tissue depths
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
@@ -248,7 +244,7 @@ if __name__ == '__main__':
     shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
     p = Pool(12)                # Remember! This executes everything outside this if statement!
     num_tissue_instances = 8    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
-    num_runs = 40               # Number of runs. Keep this a multiple of num_tissue_instances.
+    num_runs = 8               # Number of runs. Keep this a multiple of num_tissue_instances.
 
     LG_result = []              # List of objects of class 'Results'
     HG_result = []
@@ -271,14 +267,14 @@ if __name__ == '__main__':
             except FileExistsError:
                 shared_memory_blocks.append(shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes))
             n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shared_memory_blocks[-1].buf)
-            # n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
+            n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
 
             for depth in depths:
                 args.append([depth, shared_mem_name, run_number])
 
         unrolled_results_LG = p.map(Tightfocus_LG, args)               # We need to roll up the results into lists, with each list containing the contrast for all depths for a given instance of tissue.
         unrolled_results_HG = p.map(Tightfocus_HG, args)
-        
+        print(str(int(100*(1+iterator)/int(num_runs/num_tissue_instances)))+' percent complete!')
         tmp_index = 0
         for tissue_instance_number in range(num_tissue_instances):  # For the sake of readbility, I'm not going to vectorize this step.
             for i in range(len(depths)):
