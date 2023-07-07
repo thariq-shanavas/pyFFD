@@ -9,10 +9,11 @@ import numpy as np
 import scipy.signal as signal
 from scipy.stats import norm
 
-def RandomTissue(xy_cells, wavelength, dx, dz, n_h, ls, g, unique_layers):
+def RandomTissue(args):
+    [xy_cells, wavelength, dx, dz, n_h, ls, g, unique_layers, random_seed] = args
     # Generates random fluctuations in refractive index following https://doi.org/10.1364/OL.44.004989
     
-    
+    rand = np.random.default_rng(random_seed)
     
     if g<0.8 or g>0.98:
         raise NameError('g outside range (0.8,0.98)')
@@ -27,7 +28,7 @@ def RandomTissue(xy_cells, wavelength, dx, dz, n_h, ls, g, unique_layers):
     mask = np.exp(-(xx**2+yy**2)/(2*sigma_x**2))
 
     for i in range(0,unique_layers):
-        n_ih[:,:,i] = np.random.normal(scale = sigma_p, size=(xy_cells,xy_cells))
+        n_ih[:,:,i] = rand.normal(scale = sigma_p, size=(xy_cells,xy_cells))
         n_ih[:,:,i] = signal.fftconvolve(n_ih[:,:,i],mask,mode='same')
 
     n_ih = n_ih*sigma_p/norm.fit(n_ih.flatten())[1]  # Normalizing to make sure phase profile has a std. deviation of sigma_p after the convolution

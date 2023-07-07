@@ -225,7 +225,7 @@ def Tightfocus_LG(args):
 
 
 #### Test block ####
-'''
+
 print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
 print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
 shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)
@@ -235,7 +235,7 @@ try:
 except FileExistsError:
     shm = shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes)
 n_shared = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
-n_shared[:,:,:]=RandomTissue(global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
+n_shared[:,:,:]=RandomTissue([global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers, 0])
 # print(Tightfocus_LG([20e-6, shared_mem_name, 10]))
 print(Tightfocus_LG([5e-6, shared_mem_name, 10]))
 shm.unlink()
@@ -257,10 +257,17 @@ if __name__ == '__main__':
     tmp_contrast_std_deviation_HG = np.zeros(len(depths))
     
     run_number = 0
+    random_seed = 0
     for iterator in range(int(num_runs/num_tissue_instances)):
         args = []
         shared_memory_blocks = []
 
+        random_tissue_args = []
+        for i in range(num_tissue_instances):
+            random_tissue_args.append([global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers, random_seed])
+            random_seed = random_seed + 1
+
+        TissueModels = p.map(RandomTissue,random_tissue_args)
         for tissue_instance_number in range(num_tissue_instances):
             run_number = run_number+1
             shared_mem_name = 'TissueMatrix_'+str(tissue_instance_number)
@@ -270,7 +277,7 @@ if __name__ == '__main__':
             except FileExistsError:
                 shared_memory_blocks.append(shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes))
             n_shared = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype='float32', buffer=shared_memory_blocks[-1].buf)
-            n_shared[:,:,:]=RandomTissue(global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
+            n_shared[:,:,:]=TissueModels[tissue_instance_number]
 
             for depth in depths:
                 args.append([depth, shared_mem_name, run_number])
@@ -301,4 +308,4 @@ if __name__ == '__main__':
     np.save('Results/Contrast_HG', HG_result)
 
     print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
-    
+'''
