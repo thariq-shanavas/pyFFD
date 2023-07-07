@@ -225,7 +225,7 @@ def Tightfocus_LG(args):
 
 
 #### Test block ####
-
+'''
 print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
 print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
 shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)
@@ -308,4 +308,3 @@ if __name__ == '__main__':
     np.save('Results/Contrast_HG', HG_result)
 
     print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
-'''
