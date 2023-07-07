@@ -11,9 +11,11 @@ from scipy.interpolate import RegularGridInterpolator
 import copy
 
 # Simulation parameters
+# TODO: Determine xy_cells individually for each depth?
+# Cannot do that^ because Debye-Wolf integral does not work for small xy_cells
 beam_radius = 1e-3
-focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
-depths = np.array([35e-6,25e-6,15e-6,5e-6])      # Calculate the contrast at these tissue depths
+focus_depth = 3.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
+depths = np.array([35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
@@ -108,12 +110,8 @@ def Tightfocus_HG(args):
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
-    Uz[:,:,0] = Ez
-    Uz[:,:,1] = Ez2
-    Uy[:,:,0] = Ey
-    Uy[:,:,1] = Ey2
-    Ux[:,:,0] = Ex
-    Ux[:,:,1] = Ex2
+    [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
+    [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
 
     Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, dz, xy_cells, n, wavelength, suppress_evanescent)
     HG10_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
@@ -197,12 +195,8 @@ def Tightfocus_LG(args):
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
-    Uz[:,:,0] = Ez
-    Uz[:,:,1] = Ez2
-    Uy[:,:,0] = Ey
-    Uy[:,:,1] = Ey2
-    Ux[:,:,0] = Ex
-    Ux[:,:,1] = Ex2
+    [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
+    [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
 
     Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, dz, xy_cells, n, wavelength, suppress_evanescent)
     LG_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
@@ -244,7 +238,7 @@ if __name__ == '__main__':
     shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
     p = Pool(12)                # Remember! This executes everything outside this if statement!
     num_tissue_instances = 8    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
-    num_runs = 8               # Number of runs. Keep this a multiple of num_tissue_instances.
+    num_runs = 24               # Number of runs. Keep this a multiple of num_tissue_instances.
 
     LG_result = []              # List of objects of class 'Results'
     HG_result = []

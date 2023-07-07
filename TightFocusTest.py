@@ -3,10 +3,10 @@ import time
 import matplotlib.pyplot as plt
 from SeedBeams import LG_OAM_beam, HG_beam, Gaussian_beam
 import seaborn as sns
-from DebyeWolfIntegral import TightFocus
+from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from FieldPlots import VortexNull
 
-plt.rcParams['figure.dpi']= 300
+plt.rcParams['figure.dpi']= 100
 plt.rcParams.update({'font.size': 4})
 plt.rcParams['pcolor.shading'] = 'auto'
 
@@ -14,26 +14,24 @@ start_time = time.time()
 
 # Simulation parameters
 wavelength = 500e-9
-n_h = 1  # Homogenous part of refractive index
-xy_cells = 512    # Keep this a power of 2 for efficient FFT
+n_h = 1.33  # Homogenous part of refractive index
+xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+padding = 4096
+FDFD_depth = 30e-6
 
-beam_radius = 1e-3
-focus_depth = 5e-3
-dx = dy = 5e-3/(xy_cells)
+beam_radius = 1.5e-3
+focus_depth = 2.5e-3
+dx = dy = 5*beam_radius/(xy_cells)
 
-if 2*beam_radius > dx*xy_cells:
-    # Beam diameter greater than half the length of the simulation cross section.
-    raise ValueError("Beam is larger than simulation cross section")
-
-if beam_radius<50*dx:
-    raise ValueError('Sampling too coarse. Decrease dx')
-
-beam_type = 'G' # 'HG, 'LG', 'G'
+beam_type = 'LG' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
+FDFD_dx = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)*2/xy_cells
+
 if beam_type=='LG':
-    seed = LG_OAM_beam(xy_cells, dx, beam_radius, l)
+    seed_x = LG_OAM_beam(xy_cells, dx, beam_radius, l)
+    seed_y = np.zeros(seed_x.shape)
 elif beam_type=='HG':
     seed_y = HG_beam(xy_cells, dx, beam_radius, u,v)
     seed_x = np.zeros(seed_y.shape)
@@ -41,7 +39,7 @@ else:
     seed_y = Gaussian_beam(xy_cells, dx, beam_radius)
     seed_x = np.zeros(np.shape(seed_y))
 
-Ex,Ey,Ez,dx_TightFocus = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,MeasurementPlane_z=1e-6,target_dx=10e-9)
+Ex,Ey,Ez,dx_TightFocus = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,padding)
 
 
 indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -63,12 +61,8 @@ ax[1][2].pcolormesh(axis,axis,np.abs(Ez))
 ax[1][2].title.set_text("Ez")
 plt.show()
 
-if beam_type=='HG':
-    Focus_Intensity = np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2
-    Focus_Intensity = (Focus_Intensity+np.transpose(Focus_Intensity))/2
-else:
-    Focus_Intensity = np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2
-VNull = VortexNull(Focus_Intensity, dx, beam_type, cross_sections = 19, num_samples = 1000)
+
+Focus_Intensity = np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2
 
 plt.pcolormesh(axis,axis,np.abs(Focus_Intensity))
 plt.show()

@@ -3,7 +3,7 @@ from FriendlyFourierTransform import FFT2, iFFT2
 from scipy.interpolate import RegularGridInterpolator
 import warnings
 
-def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,target_dx=25e-9,zero_padding=8192):
+def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,target_dx=25e-9,zero_padding=4096):
     '''
     Provides the 3D field from focusing a polarized input field through a thick lens
     Axis of the lens is along z. Input polarization is assumed to be along x direction.
@@ -151,16 +151,17 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     ScalingFactor1 = xy_cells/zero_padding
     ScalingFactor2 = ScalingFactor/ScalingFactor1
 
-    dx_step1 = out_dx*ScalingFactor1
+    dx_step1 = out_dx*ScalingFactor1    # This is the resolution of the FFT result when the input is zero-padded
 
     pad = int((zero_padding-xy_cells)/2)
     index_step1 = np.linspace(-zero_padding/2,zero_padding/2-1,zero_padding,dtype=np.int_)
     #xx_step1, yy_step1 = np.meshgrid(dx_step1*index_step1,dx_step1*index_step1,indexing='ij')
     xx_final, yy_final = np.meshgrid(target_dx*indices,target_dx*indices,indexing='ij')
+    mask = (np.abs(theta)<np.pi/2-0.01).astype('int')   # Everything beyond the theta = pi/2 region shoul be zero.
 
-    Ex = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(np.exp(1j*kz*MeasurementPlane_z)*Ax/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
-    Ey = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(np.exp(1j*kz*MeasurementPlane_z)*Ay/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
-    Ez = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(np.exp(1j*kz*MeasurementPlane_z)*Az/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
+    Ex = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(mask*np.exp(1j*kz*MeasurementPlane_z)*Ax/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
+    Ey = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(mask*np.exp(1j*kz*MeasurementPlane_z)*Ay/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
+    Ez = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad(mask*np.exp(1j*kz*MeasurementPlane_z)*Az/kz,pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
 
     # Normalization
     n0 = np.sum(np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)*out_dx**2
