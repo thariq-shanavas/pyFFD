@@ -261,6 +261,8 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavel
 
     # x axis is the second index (axis=1). y axis is first (axis=0)
     # This makes sure pcolor represents fields accurately
+    if xy_cells%2 == 1:
+        ValueError('Cell size has to be even')
 
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     f = 1/(dx*xy_cells)*indices

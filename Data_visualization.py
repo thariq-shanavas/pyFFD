@@ -17,7 +17,6 @@ class Results:
         self.n_h = n_h
         self.ls = ls
         self.g = g
-        self.xy_cells = xy_cells
 
 LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
 HG = np.load('Results/Contrast_HG.npy', allow_pickle=True)

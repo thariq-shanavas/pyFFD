@@ -8,43 +8,30 @@ from GenerateRandomTissue import RandomTissue
 from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from multiprocessing import Pool, shared_memory
 from scipy.interpolate import RegularGridInterpolator
+from FriendlyFourierTransform import optimal_cell_size
 import copy
 
 # Simulation parameters
-# TODO: Determine xy_cells individually for each depth?
-# Cannot do that^ because Debye-Wolf integral does not work for small xy_cells
 beam_radius = 1e-3
-focus_depth = 3.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
+focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
 depths = np.array([35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 
-FDFD_dx = 70e-9     # Recommended to keep this below 50 nm ideally.
-dz = FDFD_dx * 0.6
+FDFD_dx = 50e-9     # Recommended to keep this below 50 nm ideally.
+dz = FDFD_dx * 0.8
 unique_layers = 100    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
 wavelength = 500e-9
+min_xy_cells = 255      # Minimum cells to be used. This is important because 10 or so cells on the edge form an absorbing boundary.
 
 
-# Expected spot size (1/e^2 diameter) at beginning of numerical simulation volume
-# We need to keep the dx same for all tissue depths to avoid bias from sampling resolution.
-# So we use the smallest dx that would work for all depths we are interested in.
+# We share the same procedurally generated tissue across many simulations. We find the volume needed for the largest simulation
 max_spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,np.max(depths))
-xy_cells = int(2**np.ceil(np.log2(max_spot_size_at_start_of_FDFD_volume*1.5/FDFD_dx)))
-
-# Parameters for saving the images to Results folder.
-spot_size_at_focus = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)   # For plotting
-imaging_dx = spot_size_at_focus*6/xy_cells
-indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-axis = 10**6*FDFD_dx*indices
-imaging_axes = 10**6*imaging_dx*indices
-xx_imaging, yy_imaging = np.meshgrid(imaging_axes,imaging_axes, indexing='ij')  # Mesh grid used for plotting
+global_xy_cells = optimal_cell_size(max_spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
 
 if dz>FDFD_dx or dz>wavelength/10:
     raise ValueError('Reduce dz!')
-
-# Other parameters - do not change
-dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
 
 if FDFD_dx > wavelength/((n_h+0.1)*1.41):     # If resolution > lambda/sqrt(2), Evanescent fields blow up. 0.1 adds a small margin of error.
     suppress_evanescent = False
@@ -66,7 +53,6 @@ class Results:
         self.n_h = n_h
         self.ls = ls
         self.g = g
-        self.xy_cells = xy_cells
 
 
 def Tightfocus_HG(args):
@@ -90,8 +76,21 @@ def Tightfocus_HG(args):
     
     beam_type = 'HG' # 'HG, 'LG', 'G'
 
+    spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)
+    xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
+
+    # Parameters for saving the images to Results folder.
+    spot_size_at_focus = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)   # For plotting
+    imaging_dx = spot_size_at_focus*6/xy_cells
+    indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+    axis = 10**6*FDFD_dx*indices
+    imaging_axes = 10**6*imaging_dx*indices
+    xx_imaging, yy_imaging = np.meshgrid(imaging_axes,imaging_axes, indexing='ij')  # Mesh grid used for plotting
+    dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
+
     existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
-    n = np.ndarray((xy_cells,xy_cells,unique_layers), dtype=np.float32, buffer=existing_shm.buf)
+    n_global = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype=np.float32, buffer=existing_shm.buf)
+    n = n_global[:xy_cells,:xy_cells,:]     # Generate a new view. This allocates no new memory
 
     (u,v) = (1,0)   # Mode numbers for HG beam
     seed_y = HG_beam(xy_cells, dx, beam_radius, u,v)    # This is well behaved and does not fill in at the focus
@@ -129,12 +128,8 @@ def Tightfocus_HG(args):
     Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,4096)
     Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,FDFD_dx,4096)
 
-    Uz[:,:,0] = Ez
-    Uz[:,:,1] = Ez2
-    Uy[:,:,0] = Ey
-    Uy[:,:,1] = Ey2
-    Ux[:,:,0] = Ex
-    Ux[:,:,1] = Ex2
+    [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
+    [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
 
     Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, dz, xy_cells, n, wavelength, suppress_evanescent)
     HG01_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
@@ -151,7 +146,7 @@ def Tightfocus_HG(args):
     ax3.set_ylabel("y ($µm$)", fontweight='bold')
 
     plt.tight_layout()
-    plt.savefig('Results/HG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png')
+    plt.savefig('Results/HG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png', bbox_inches = 'tight', dpi=500)
     plt.close()
 
     Contrast,Contrast_std_deviation = VortexNull(Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
@@ -174,9 +169,21 @@ def Tightfocus_LG(args):
     run_number = args[2]
 
     beam_type = 'LG' # 'HG, 'LG', 'G'
+    spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)
+    xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
+
+    # Parameters for saving the images to Results folder.
+    spot_size_at_focus = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)   # For plotting
+    imaging_dx = spot_size_at_focus*6/xy_cells
+    indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+    axis = 10**6*FDFD_dx*indices
+    imaging_axes = 10**6*imaging_dx*indices
+    xx_imaging, yy_imaging = np.meshgrid(imaging_axes,imaging_axes, indexing='ij')  # Mesh grid used for plotting
+    dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
 
     existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
-    n = np.ndarray((xy_cells,xy_cells,unique_layers), dtype=np.float32, buffer=existing_shm.buf)
+    n_global = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype=np.float32, buffer=existing_shm.buf)
+    n = n_global[:xy_cells,:xy_cells,:]     # Generate a new view. This allocates no new memory
 
     l = 1
     seed_x = LG_OAM_beam(xy_cells, dx, beam_radius, l)
@@ -207,9 +214,9 @@ def Tightfocus_LG(args):
     plt.xticks(weight = 'bold', fontsize=12)
     plt.ylabel("y ($µm$)", weight='bold', fontsize=12)
     plt.yticks(weight = 'bold', fontsize=12)
-    
+
     plt.tight_layout()
-    plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png')
+    plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png', bbox_inches = 'tight', dpi=500)
     plt.close()
 
     Contrast,Contrast_std_deviation = VortexNull(LG_Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
@@ -219,23 +226,25 @@ def Tightfocus_LG(args):
 
 #### Test block ####
 '''
-print('Cell size is ' + str(xy_cells))
-shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)
+print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
+print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
+shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)
 shared_mem_name = 'Shared_test_block'
 try:
     shm = shared_memory.SharedMemory(name=shared_mem_name,create=True, size=shared_memory_bytes)
 except FileExistsError:
     shm = shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes)
-n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
-n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
+n_shared = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
+n_shared[:,:,:]=RandomTissue(global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
+# print(Tightfocus_LG([20e-6, shared_mem_name, 10]))
 print(Tightfocus_LG([5e-6, shared_mem_name, 10]))
-print(Tightfocus_HG([5e-6, shared_mem_name, 10]))
 shm.unlink()
 '''
 if __name__ == '__main__':
     start_time = time.time()
-    print('Cell size is ' + str(xy_cells))
-    shared_memory_bytes = int(xy_cells*xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
+    print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
+    print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
+    shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
     p = Pool(12)                # Remember! This executes everything outside this if statement!
     num_tissue_instances = 8    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
     num_runs = 24               # Number of runs. Keep this a multiple of num_tissue_instances.
@@ -260,8 +269,8 @@ if __name__ == '__main__':
                 shared_memory_blocks.append(shared_memory.SharedMemory(name=shared_mem_name,create=True, size=shared_memory_bytes))
             except FileExistsError:
                 shared_memory_blocks.append(shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes))
-            n_shared = np.ndarray((xy_cells,xy_cells,unique_layers), dtype='float32', buffer=shared_memory_blocks[-1].buf)
-            n_shared[:,:,:]=RandomTissue(xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
+            n_shared = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype='float32', buffer=shared_memory_blocks[-1].buf)
+            n_shared[:,:,:]=RandomTissue(global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers)
 
             for depth in depths:
                 args.append([depth, shared_mem_name, run_number])
@@ -292,3 +301,4 @@ if __name__ == '__main__':
     np.save('Results/Contrast_HG', HG_result)
 
     print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
+    

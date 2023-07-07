@@ -15,19 +15,21 @@ start_time = time.time()
 # Simulation parameters
 wavelength = 500e-9
 n_h = 1.33  # Homogenous part of refractive index
-xy_cells = 1024    # Keep this a power of 2 for efficient FFT
+xy_cells = 128    # Keep this a power of 2 for efficient FFT
 padding = 4096
-FDFD_depth = 30e-6
-
-beam_radius = 1.5e-3
+FDFD_depth = 5e-6
+FDFD_dx = 80e-9
+beam_radius = 1e-3
 focus_depth = 2.5e-3
-dx = dy = 5*beam_radius/(xy_cells)
 
+xy_cells = int(2**np.ceil(np.log2(SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,np.max(FDFD_depth))*1.5/FDFD_dx)))
+dx = dy = 2*2*beam_radius/(xy_cells)
+print('Cell size is ' + str(xy_cells))
+print('NA is '+str(n_h*(2*beam_radius/focus_depth)))
 beam_type = 'LG' # 'HG, 'LG', 'G'
 l = 1  # Topological charge for LG beam
 (u,v) = (1,0)   # Mode numbers for HG beam
 
-FDFD_dx = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)*2/xy_cells
 
 if beam_type=='LG':
     seed_x = LG_OAM_beam(xy_cells, dx, beam_radius, l)
