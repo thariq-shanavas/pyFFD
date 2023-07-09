@@ -14,7 +14,7 @@ import copy
 # Simulation parameters
 beam_radius = 1e-3
 focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
-depths = np.array([35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
+depths = np.array([40e-6,35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
@@ -72,7 +72,7 @@ def Tightfocus_HG(args):
     FDFD_depth = args[0]
     shared_mem_name = args[1]
     run_number = args[2]
-    # print('Thread running with depth %1.2f um, run number %1.2f' %(10**6*FDFD_depth, run_number))
+    print('Simulation (HG) with depth %2.0f um, run number %2.0f starting...' %(10**6*FDFD_depth, run_number))
     
     beam_type = 'HG' # 'HG, 'LG', 'G'
 
@@ -102,8 +102,8 @@ def Tightfocus_HG(args):
     if xy_cells<4*min_N:
         raise ValueError('Increase resolution!')
 
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,4096)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,FDFD_dx,4096)
+    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,2040)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,FDFD_dx,2040)
 
     Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
@@ -125,8 +125,8 @@ def Tightfocus_HG(args):
     (u,v) = (0,1)   # Mode numbers for HG beam
     seed_x = HG_beam(xy_cells, dx, beam_radius, u,v)    # This is well behaved and does not fill in at the focus
     seed_y = np.zeros(seed_x.shape)
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,4096)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,FDFD_dx,4096)
+    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,2040)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,FDFD_dx,2040)
 
     [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
     [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
@@ -151,6 +151,8 @@ def Tightfocus_HG(args):
 
     Contrast,Contrast_std_deviation = VortexNull(Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
     existing_shm.close()
+
+    print('Simulation (HG) with depth %2.0f um, run number %2.0f exiting' %(10**6*FDFD_depth, run_number))
     return Contrast, Contrast_std_deviation
 
 def Tightfocus_LG(args):
@@ -167,6 +169,7 @@ def Tightfocus_LG(args):
     FDFD_depth = args[0]
     shared_mem_name = args[1]
     run_number = args[2]
+    print('Simulation (LG) with depth %2.0f um, run number %2.0f starting...' %(10**6*FDFD_depth, run_number))
 
     beam_type = 'LG' # 'HG, 'LG', 'G'
     spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,FDFD_depth)
@@ -195,8 +198,8 @@ def Tightfocus_LG(args):
     if xy_cells<4*min_N:
         raise ValueError('Increase resolution!')
 
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,4096)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,FDFD_dx,4096)
+    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,2040)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-dz,FDFD_dx,2040)
 
     Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
@@ -221,6 +224,8 @@ def Tightfocus_LG(args):
 
     Contrast,Contrast_std_deviation = VortexNull(LG_Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
     existing_shm.close()
+
+    print('Simulation (LG) with depth %2.0f um, run number %2.0f exiting' %(10**6*FDFD_depth, run_number))
     return Contrast, Contrast_std_deviation
 
 
@@ -237,7 +242,7 @@ except FileExistsError:
 n_shared = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
 n_shared[:,:,:]=RandomTissue([global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers, 0])
 # print(Tightfocus_LG([20e-6, shared_mem_name, 10]))
-print(Tightfocus_LG([5e-6, shared_mem_name, 10]))
+print(Tightfocus_HG([5e-6, shared_mem_name, 10]))
 shm.unlink()
 '''
 if __name__ == '__main__':
@@ -245,9 +250,9 @@ if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
     shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
-    p = Pool(12)                # Remember! This executes everything outside this if statement!
+    p = Pool(32)                # Remember! This executes everything outside this if statement!
     num_tissue_instances = 8    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
-    num_runs = 24               # Number of runs. Keep this a multiple of num_tissue_instances.
+    num_runs = 32               # Number of runs. Keep this a multiple of num_tissue_instances.
 
     LG_result = []              # List of objects of class 'Results'
     HG_result = []
@@ -257,15 +262,15 @@ if __name__ == '__main__':
     tmp_contrast_std_deviation_HG = np.zeros(len(depths))
     
     run_number = 0
-    random_seed = 0
+    random_seed = 0     # Run n should be seeded with seed = n, for reproducability.
     for iterator in range(int(num_runs/num_tissue_instances)):
         args = []
         shared_memory_blocks = []
 
         random_tissue_args = []
         for i in range(num_tissue_instances):
-            random_tissue_args.append([global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers, random_seed])
             random_seed = random_seed + 1
+            random_tissue_args.append([global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers, random_seed])
 
         TissueModels = p.map(RandomTissue,random_tissue_args)
         for tissue_instance_number in range(num_tissue_instances):
