@@ -1,13 +1,11 @@
 import numpy as np
 import time
-import matplotlib.pyplot as plt
 from PropagationAlgorithm import Vector_FiniteDifference
 from SeedBeams import LG_OAM_beam, HG_beam
-from FieldPlots import VortexNull
+from FieldPlots import VortexNull, plot_HG, plot_LG
 from GenerateRandomTissue import RandomTissue
 from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from multiprocessing import Pool, shared_memory
-from scipy.interpolate import RegularGridInterpolator
 from FriendlyFourierTransform import optimal_cell_size
 import copy
 
@@ -57,18 +55,6 @@ class Results:
 
 def Tightfocus_HG(args):
     
-    fig = plt.figure()
-    plt.gcf().set_dpi(500)
-    plt.rcParams.update({'font.size': 5})
-    plt.rcParams['pcolor.shading'] = 'auto'
-    plt.rcParams["font.weight"] = "bold"
-    plt.rcParams["axes.labelweight"] = "bold"
-    plt.rcParams["axes.linewidth"] = 1
-    
-    ax1 = fig.add_subplot(1,3,1, adjustable='box', aspect=1)
-    ax2 = fig.add_subplot(1,3,2, adjustable='box', aspect=1)
-    ax3 = fig.add_subplot(1,3,3, adjustable='box', aspect=1)
-
     FDFD_depth = args[0]
     shared_mem_name = args[1]
     run_number = args[2]
@@ -80,12 +66,6 @@ def Tightfocus_HG(args):
     xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
 
     # Parameters for saving the images to Results folder.
-    spot_size_at_focus = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)   # For plotting
-    imaging_dx = spot_size_at_focus*6/xy_cells
-    indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-    axis = 10**6*FDFD_dx*indices
-    imaging_axes = 10**6*imaging_dx*indices
-    xx_imaging, yy_imaging = np.meshgrid(imaging_axes,imaging_axes, indexing='ij')  # Mesh grid used for plotting
     dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
 
     existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
@@ -115,11 +95,6 @@ def Tightfocus_HG(args):
     Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, dz, xy_cells, n, wavelength, suppress_evanescent)
     HG10_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
-    ax1.pcolormesh(imaging_axes,imaging_axes,RegularGridInterpolator((axis,axis),HG10_Focus_Intensity, bounds_error = True, method='linear')((xx_imaging, yy_imaging)))
-    ax1.set_title('HG 10 beam at focus', fontweight='bold')
-    ax1.set_xlabel("x ($µm$)", fontweight='bold')
-    ax1.set_ylabel("y ($µm$)", fontweight='bold')
-
     #### Second HG beam ####
 
     (u,v) = (0,1)   # Mode numbers for HG beam
@@ -134,20 +109,9 @@ def Tightfocus_HG(args):
     Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, dz, xy_cells, n, wavelength, suppress_evanescent)
     HG01_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
-    ax2.pcolormesh(imaging_axes,imaging_axes,RegularGridInterpolator((axis,axis),HG01_Focus_Intensity, bounds_error = True, method='linear')((xx_imaging, yy_imaging)))
-    ax2.set_title('HG 01 beam at focus', fontweight='bold')
-    ax2.set_xlabel("x ($µm$)", fontweight='bold')
-    ax2.set_ylabel("y ($µm$)", fontweight='bold')
-
     Focus_Intensity = HG01_Focus_Intensity+HG10_Focus_Intensity
-    ax3.pcolormesh(imaging_axes,imaging_axes,RegularGridInterpolator((axis,axis),Focus_Intensity , bounds_error = True, method='linear')((xx_imaging, yy_imaging)))
-    ax3.set_title('HG 01 + HG 10 (Incoherent Donut)', fontweight='bold')
-    ax3.set_xlabel("x ($µm$)", fontweight='bold')
-    ax3.set_ylabel("y ($µm$)", fontweight='bold')
 
-    plt.tight_layout()
-    plt.savefig('Results/HG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png', bbox_inches = 'tight', dpi=500)
-    plt.close()
+    plot_HG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,HG10_Focus_Intensity,HG01_Focus_Intensity,Focus_Intensity,FDFD_depth,run_number)
 
     Contrast,Contrast_std_deviation = VortexNull(Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
     existing_shm.close()
@@ -156,15 +120,6 @@ def Tightfocus_HG(args):
     return Contrast, Contrast_std_deviation
 
 def Tightfocus_LG(args):
-    
-    fig = plt.figure()
-    plt.gca().set_aspect('equal')
-    plt.gcf().set_dpi(500)
-    plt.rcParams.update({'font.size': 12})
-    plt.rcParams['pcolor.shading'] = 'auto'
-    plt.rcParams["font.weight"] = "bold"
-    plt.rcParams["axes.labelweight"] = "bold"
-    plt.rcParams["axes.linewidth"] = 2
     
     FDFD_depth = args[0]
     shared_mem_name = args[1]
@@ -176,12 +131,6 @@ def Tightfocus_LG(args):
     xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
 
     # Parameters for saving the images to Results folder.
-    spot_size_at_focus = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)   # For plotting
-    imaging_dx = spot_size_at_focus*6/xy_cells
-    indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-    axis = 10**6*FDFD_dx*indices
-    imaging_axes = 10**6*imaging_dx*indices
-    xx_imaging, yy_imaging = np.meshgrid(imaging_axes,imaging_axes, indexing='ij')  # Mesh grid used for plotting
     dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
 
     existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
@@ -211,16 +160,7 @@ def Tightfocus_LG(args):
     Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, dz, xy_cells, n, wavelength, suppress_evanescent)
     LG_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
-    plt.pcolormesh(imaging_axes,imaging_axes,RegularGridInterpolator((axis,axis),LG_Focus_Intensity, bounds_error = True, method='linear')((xx_imaging, yy_imaging)))
-    plt.title("LG beam at focus", weight='bold')
-    plt.xlabel("x ($µm$)", weight='bold', fontsize=12)
-    plt.xticks(weight = 'bold', fontsize=12)
-    plt.ylabel("y ($µm$)", weight='bold', fontsize=12)
-    plt.yticks(weight = 'bold', fontsize=12)
-
-    plt.tight_layout()
-    plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png', bbox_inches = 'tight', dpi=500)
-    plt.close()
+    plot_LG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,LG_Focus_Intensity,FDFD_depth,run_number)
 
     Contrast,Contrast_std_deviation = VortexNull(LG_Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
     existing_shm.close()
@@ -230,7 +170,7 @@ def Tightfocus_LG(args):
 
 
 #### Test block ####
-'''
+
 print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
 print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
 shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)
@@ -242,7 +182,7 @@ except FileExistsError:
 n_shared = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
 n_shared[:,:,:]=RandomTissue([global_xy_cells, wavelength, FDFD_dx, dz, n_h, ls, g, unique_layers, 0])
 # print(Tightfocus_LG([20e-6, shared_mem_name, 10]))
-print(Tightfocus_HG([5e-6, shared_mem_name, 10]))
+print(Tightfocus_LG([5e-6, shared_mem_name, 100]))
 shm.unlink()
 '''
 if __name__ == '__main__':
@@ -313,3 +253,4 @@ if __name__ == '__main__':
     np.save('Results/Contrast_HG', HG_result)
 
     print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
+'''
