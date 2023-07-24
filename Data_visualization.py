@@ -1,22 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import hmean
-
-class Results:
-    # Saves results for all depths, for one instantiation of the tissue.
-    def __init__(self, contrasts, contrast_std_deviations):
-        self.depths = depths
-        self.contrasts = contrasts
-        self.contrast_std_deviations = contrast_std_deviations
-        self.wavelength = wavelength
-        self.FDFD_dx = FDFD_dx
-        self.dz = dz
-        self.beam_radius = beam_radius
-        self.focus_depth = focus_depth
-        self.unique_layers = unique_layers
-        self.n_h = n_h
-        self.ls = ls
-        self.g = g
+from ParallelTightFocusContrastVsDepth import Results
 
 LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
 HG = np.load('Results/Contrast_HG.npy', allow_pickle=True)
