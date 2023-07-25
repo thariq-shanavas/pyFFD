@@ -8,6 +8,7 @@ from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from multiprocessing import Pool, shared_memory
 from FriendlyFourierTransform import optimal_cell_size
 import copy
+from datetime import timedelta
 from scipy.interpolate import RegularGridInterpolator
 
 # Simulation parameters
@@ -275,4 +276,5 @@ if __name__ == '__main__':
     np.save('Results/Contrast_LG', LG_result)
     np.save('Results/Contrast_HG', HG_result)
 
-    print("--- %s seconds ---" % '%.2f'%(time.time() - start_time))
+    td = timedelta(seconds=time.time() - start_time)
+    print('Time taken (hh:mm:ss):', td)
