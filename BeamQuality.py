@@ -1,6 +1,6 @@
 import numpy as np
 
-def STED_psf_area(dx,excitationBeam,depletionBeam, fluorescenceThreshold, I_sat):
+def STED_psf_radius(dx,excitationBeam,depletionBeam, fluorescenceThreshold, I_sat):
     # This function approximately calculates the spot size of the STED point spread function
 
     ## If the excitationBeam is brighter than fluorescenceThreshold, the fluorophore is excited.
@@ -16,10 +16,10 @@ def STED_psf_area(dx,excitationBeam,depletionBeam, fluorescenceThreshold, I_sat)
     # Make sure dx is small enough
     if dx > 10e-9:
         ValueError("Interpolate the function before calculating STED PSF!")
-    fluorophore_active = ((excitationBeam>fluorescenceThreshold) and (depletionBeam<I_sat))
-    num_active_fluorphores = fluorophore_active.count(True)
+    fluorophore_active = np.logical_and((excitationBeam>fluorescenceThreshold),(depletionBeam<I_sat))
+    num_active_fluorphores = fluorophore_active.sum()
 
     # pi*r**2 = num_active_fluorphores*dx**2
     # Return diameter = 2*r
-    return 2*np.sqrt(num_active_fluorphores*dx**2/np.pi)
+    return 2*dx*np.sqrt(num_active_fluorphores/np.pi)
     

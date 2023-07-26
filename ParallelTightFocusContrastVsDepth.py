@@ -43,10 +43,10 @@ else:
 class Results:
     # Saves results for all depths, for one instantiation of the tissue.
     def __init__(self, contrasts, contrast_std_deviations, intensity_profile):
-        self.depths = depths
-        self.contrasts = contrasts
-        self.contrast_std_deviations = contrast_std_deviations
-        self.intensity_profile = intensity_profile
+        self.depths = depths                                        # This is a list
+        self.contrasts = contrasts                                  # This is a list
+        self.contrast_std_deviations = contrast_std_deviations      # This is a list
+        self.intensity_profile = intensity_profile                  # This is a list. TODO: Change variable name to intensity_profiles
         self.dx = dx_for_export
         self.wavelength = wavelength
         self.FDFD_dx = FDFD_dx
