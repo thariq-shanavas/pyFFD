@@ -30,6 +30,7 @@ def HG_beam(xy_cells,dx,beam_radius,u,v):
 
 def Gaussian_beam(xy_cells,dx,beam_radius):
     
+    # beam_radius is 1/e*2 intensity point. Note that this function returns electric field, not intensity.
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     xx, yy = np.meshgrid(dx*indices,dx*indices)
     #r = np.sqrt(xx**2+yy**2) # Radial coordinate
