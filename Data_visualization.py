@@ -13,6 +13,8 @@ from SeedBeams import Gaussian_beam
 # Parameters
 # Saturation factor is the peak power of an ideal donut over the saturation power, for either type.
 # To simulate increasing donut power, increase this factor.
+# TODO: Normalize against total power at focus, not peak power.
+# TODO: Use probability distribution of fluorescence and depletion instead of all or nothing exciitation and depletion
 saturation_factor = 20
 
 LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
