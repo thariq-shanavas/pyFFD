@@ -14,17 +14,20 @@ from SeedBeams import Gaussian_beam
 # Saturation factor is the peak power of an ideal donut over the saturation power, for either type.
 # To simulate increasing donut power, increase this factor.
 # TODO: Use probability distribution of fluorescence and depletion instead of all or nothing exciitation and depletion
+# TODO: Fix I_sat estimation as mean of 4 samples instead.
 saturation_factor = 20
 
 LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
 HG = np.load('Results/Contrast_HG.npy', allow_pickle=True)
 plot_contrast = False
-plot_STED_PSF_radius = True
+plot_STED_PSF_fwhm = True
+fast_mode = False
+num_runs = len(LG)
 
 if plot_contrast:
-    contrast_vs_depth_LG = np.zeros((len(LG[0].depths),len(LG)))
-    contrast_vs_depth_HG = np.zeros((len(HG[0].depths),len(HG)))
-    for i in range(len(LG)):
+    contrast_vs_depth_LG = np.zeros((len(LG[0].depths),num_runs))
+    contrast_vs_depth_HG = np.zeros((len(HG[0].depths),num_runs))
+    for i in range(num_runs):
         contrast_vs_depth_LG[:,i] = LG[i].contrasts
         contrast_vs_depth_HG[:,i] = HG[i].contrasts
 
@@ -33,7 +36,7 @@ if plot_contrast:
     plt.legend()
 
 
-if plot_STED_PSF_radius:
+if plot_STED_PSF_fwhm:
     dx = LG[0].dx
     xy_cells = LG[0].intensity_profile[0].shape[0]
     depths = LG[0].depths * 10**6
@@ -44,14 +47,14 @@ if plot_STED_PSF_radius:
     I_sat_LG = 1/saturation_factor*np.max(LG[0].intensity_profile[7])
     I_sat_HG = 1/saturation_factor*np.max(HG[0].intensity_profile[7])
 
-    PSF_vs_depth_LG = np.zeros((len(LG[0].depths),len(LG)))
+    PSF_vs_depth_LG = np.zeros((len(LG[0].depths),num_runs))
     PSF_vs_depth_HG = np.zeros(PSF_vs_depth_LG.shape)
-    for run_number in range(len(LG)):
+    for run_number in range(num_runs):
         for depth_index in range(len(depths)):
             field_profile_LG = LG[run_number].intensity_profile[depth_index]
-            PSF_vs_depth_LG[depth_index,run_number] = 10**9*STED_psf_radius(dx,excitationBeam,field_profile_LG,fluorescenceThreshold , I_sat_LG)
+            PSF_vs_depth_LG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_LG,fluorescenceThreshold , I_sat_LG, fast_mode)
             field_profile_HG = HG[run_number].intensity_profile[depth_index]
-            PSF_vs_depth_HG[depth_index,run_number] = 10**9*STED_psf_radius(dx,excitationBeam,field_profile_HG,fluorescenceThreshold , I_sat_HG)
+            PSF_vs_depth_HG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_HG,fluorescenceThreshold , I_sat_HG, fast_mode)
             '''
             plt.pcolormesh(excitationBeam>fluorescenceThreshold)
             plt.show()
@@ -60,8 +63,6 @@ if plot_STED_PSF_radius:
             plt.pcolormesh(np.logical_and((excitationBeam>fluorescenceThreshold),(field_profile_LG<I_sat)))
             plt.show()
             '''
-            
-
     LG_figure_of_merit = np.median(PSF_vs_depth_LG,axis=1)
     HG_figure_of_merit = np.median(PSF_vs_depth_HG,axis=1)
     fig,ax = plt.subplots()
@@ -87,7 +88,7 @@ if plot_STED_PSF_radius:
     plt.title("STED PSF for LG vs HG depletion beam", weight='bold')
     plt.xlabel("Tissue depth ($µm$)", weight='bold', fontsize=12)
     plt.xticks(weight = 'bold', fontsize=12)
-    plt.ylabel("STED PSF diameter ($nm$)", weight='bold', fontsize=12)
+    plt.ylabel("STED PSF fwhm ($nm$)", weight='bold', fontsize=12)
     plt.yticks(weight = 'bold', fontsize=12)
     plt.tight_layout()
     plt.show()

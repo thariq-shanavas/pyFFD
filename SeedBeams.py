@@ -24,7 +24,7 @@ def HG_beam(xy_cells,dx,beam_radius,u,v):
     Hx = special.hermite(u)
     Hy = special.hermite(v)
     beam = beam*Hx(np.sqrt(2)*xx/beam_radius)*Hy(np.sqrt(2)*yy/beam_radius)   # Apply spiral phase
-    beam = beam/np.sqrt(np.sum(beam**2*dx**2))  # Normalization
+    beam = beam/np.sqrt(np.sum(np.abs(beam)**2*dx**2))  # Normalization
     
     return beam
 
@@ -35,6 +35,6 @@ def Gaussian_beam(xy_cells,dx,beam_radius):
     xx, yy = np.meshgrid(dx*indices,dx*indices)
     #r = np.sqrt(xx**2+yy**2) # Radial coordinate
     beam = np.exp(-(xx**2+yy**2)/(beam_radius**2))  # Gaussian envelope
-    beam = beam/np.sqrt(np.sum(beam**2*dx**2))  # Normalization
+    beam = beam/np.sqrt(np.sum(np.abs(beam)**2*dx**2))  # Normalization
     
     return beam

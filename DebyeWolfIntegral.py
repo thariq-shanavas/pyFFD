@@ -166,7 +166,7 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     Ez = RegularGridInterpolator((dx_step1*index_step1,dx_step1*index_step1),prefactor*FFT2(np.pad((mask*np.exp(1j*kz*MeasurementPlane_z)*Az/kz).astype('complex64'),pad)), bounds_error = False, fill_value = 0, method='linear')((xx_final, yy_final))
 
     # Normalization
-    n0 = np.sum(np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)*out_dx**2
+    n0 = np.sqrt(np.sum(np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2)*target_dx**2)
     Ex = (Ex/n0).astype('complex64')
     Ey = (Ey/n0).astype('complex64')
     Ez = (Ez/n0).astype('complex64')

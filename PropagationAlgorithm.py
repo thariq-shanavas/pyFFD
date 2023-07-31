@@ -286,7 +286,9 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavel
     #mask = ((fxfx**2+fyfy**2)<(1/wavelength)**2).astype(float)
 
     ## Type 2 Fourier mask
-    alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-np.average(index-0.1)**2/wavelength**2,0))
+    # Explanation: We attenuate evanescent fields that meet the condition fx^2 + fy^2 > n/lambda
+    # Since n is not homogenous, we take the 1 percentile low value of n in the whole volume.
+    alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-np.percentile(index,1)**2/wavelength**2,0))
     mask = np.exp(-alpha*dz)
 
 

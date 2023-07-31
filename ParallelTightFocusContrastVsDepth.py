@@ -188,7 +188,7 @@ def Tightfocus_LG(args):
 
 
 #### Test block ####
-'''
+
 if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
@@ -201,8 +201,8 @@ if __name__ == '__main__':
     n_shared = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
     n_shared[:,:,:]=RandomTissue([global_xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
     # print(Tightfocus_LG([20e-6, shared_mem_name, 10]))
-    Contrast, Contrast_std_deviation, _ = Tightfocus_LG([5e-6, shared_mem_name, 100])
-    print(Contrast, Contrast_std_deviation)
+    Contrast, Contrast_std_deviation, export_field = Tightfocus_HG([5e-6, shared_mem_name, 100])
+    print(Contrast, Contrast_std_deviation,np.sum(export_field))
     shm.unlink()
 '''
 if __name__ == '__main__':
@@ -278,3 +278,4 @@ if __name__ == '__main__':
 
     td = timedelta(seconds=time.time() - start_time)
     print('Time taken (hh:mm:ss):', td)
+    '''
