@@ -39,7 +39,7 @@ if FDFD_dx > wavelength/((n_h+0.1)*1.41):     # If resolution > lambda/sqrt(2), 
     suppress_evanescent = False
 else:
     suppress_evanescent = True
- 
+
 class Results:
     # Saves results for all depths, for one instantiation of the tissue.
     def __init__(self, contrasts, contrast_std_deviations, intensity_profile):
@@ -74,9 +74,13 @@ def Tightfocus_HG(args):
     # Parameters for saving the images to Results folder.
     dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
 
-    existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
-    n_global = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype=np.float32, buffer=existing_shm.buf)
-    n = n_global[:xy_cells,:xy_cells,:]     # Generate a new view. This allocates no new memory
+    if shared_mem_name != '':
+        existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
+        n_global = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype=np.float32, buffer=existing_shm.buf)
+        n = n_global[:xy_cells,:xy_cells,:]     # Generate a new view. This allocates no new memory
+    else:
+        # This fallback should only run during visualization
+        n = np.ones((xy_cells,xy_cells,10))
 
     (u,v) = (1,0)   # Mode numbers for HG beam
     seed_y = HG_beam(xy_cells, dx, beam_radius, u,v)    # This is well behaved and does not fill in at the focus
@@ -98,7 +102,10 @@ def Tightfocus_HG(args):
     [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
     [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
 
-    Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
+    if FDFD_depth != 0:
+        Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
+    else:
+        [Ux[:,:,2], Uy[:,:,2], Uz[:,:,2]] = [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]]
     HG10_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
     #### Second HG beam ####
@@ -112,7 +119,10 @@ def Tightfocus_HG(args):
     [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
     [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
 
-    Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
+    if FDFD_depth != 0:
+        Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
+    else:
+        [Ux[:,:,2], Uy[:,:,2], Uz[:,:,2]] = [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]]
     HG01_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
     Focus_Intensity = HG01_Focus_Intensity+HG10_Focus_Intensity
@@ -120,7 +130,8 @@ def Tightfocus_HG(args):
     plot_HG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,HG10_Focus_Intensity,HG01_Focus_Intensity,Focus_Intensity,FDFD_depth,run_number)
 
     Contrast,Contrast_std_deviation = VortexNull(Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
-    existing_shm.close()
+    if shared_mem_name != '':
+        existing_shm.close()
 
     # For saving results
     original_axis = 10**6*FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -145,9 +156,13 @@ def Tightfocus_LG(args):
     # Parameters for saving the images to Results folder.
     dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
 
-    existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
-    n_global = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype=np.float32, buffer=existing_shm.buf)
-    n = n_global[:xy_cells,:xy_cells,:]     # Generate a new view. This allocates no new memory
+    if shared_mem_name != '':
+        existing_shm = shared_memory.SharedMemory(name=shared_mem_name)
+        n_global = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype=np.float32, buffer=existing_shm.buf)
+        n = n_global[:xy_cells,:xy_cells,:]     # Generate a new view. This allocates no new memory
+    else:
+        # This fallback should only run during visualization
+        n = np.ones((xy_cells,xy_cells,10))
 
     l = 1
     seed_x = LG_OAM_beam(xy_cells, dx, beam_radius, l)
@@ -169,13 +184,18 @@ def Tightfocus_LG(args):
     [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
     [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
 
-    Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
+    if FDFD_depth != 0:
+        Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
+    else:
+        [Ux[:,:,2], Uy[:,:,2], Uz[:,:,2]] = [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]]
+    
     LG_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
 
     plot_LG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,LG_Focus_Intensity,FDFD_depth,run_number)
 
     Contrast,Contrast_std_deviation = VortexNull(LG_Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
-    existing_shm.close()
+    if shared_mem_name != '':
+        existing_shm.close()
 
     # For saving results
     original_axis = 10**6*FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -200,8 +220,9 @@ if __name__ == '__main__':
         shm = shared_memory.SharedMemory(name=shared_mem_name,create=False, size=shared_memory_bytes)
     n_shared = np.ndarray((global_xy_cells,global_xy_cells,unique_layers), dtype='float32', buffer=shm.buf)
     n_shared[:,:,:]=RandomTissue([global_xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
+    #n_shared[:,:,:]=n_h
     # print(Tightfocus_LG([20e-6, shared_mem_name, 10]))
-    Contrast, Contrast_std_deviation, export_field = Tightfocus_HG([5e-6, shared_mem_name, 100])
+    Contrast, Contrast_std_deviation, export_field = Tightfocus_LG([10e-6, shared_mem_name, 100])
     print(Contrast, Contrast_std_deviation,np.sum(export_field))
     shm.unlink()
 '''

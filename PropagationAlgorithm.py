@@ -287,10 +287,12 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavel
 
     ## Type 2 Fourier mask
     # Explanation: We attenuate evanescent fields that meet the condition fx^2 + fy^2 > n/lambda
-    # Since n is not homogenous, we take the 1 percentile low value of n in the whole volume.
-    alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-np.percentile(index,1)**2/wavelength**2,0))
+    # Since n is not homogenous, we take the 10 percentile low value of n in the whole volume.
+    alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-np.percentile(index,10)**2/wavelength**2,0))
     mask = np.exp(-alpha*dz)
 
+    # Set the very high frequency terms to 0 in the mask
+    # mask[np.where((fxfx**2+fyfy**2)>(4*np.average(index)/wavelength)**2)] = 0
 
     # Reserving memory for copying the refractive index to a new variable
     # This variable stores the refractive index in the current and previous z plane
@@ -329,6 +331,13 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavel
             Uy[:,:,2] =  iFFT2(mask*FFT2(Uy[:,:,2]))
             Uz[:,:,2] =  iFFT2(mask*FFT2(Uz[:,:,2]))
 
+        '''
+        n0 = np.sqrt(np.sum(np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2)*dx**2)
+        Ux[:,:,2] = Ux[:,:,2]/n0
+        Uy[:,:,2] = Uy[:,:,2]/n0
+        Uz[:,:,2] = Uz[:,:,2]/n0
+        '''
+        
         Ux[:,:,0] = Ux[:,:,1]
         Ux[:,:,1] = Ux[:,:,2]
         Uy[:,:,0] = Uy[:,:,1]

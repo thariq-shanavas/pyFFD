@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import hmean
-from ParallelTightFocusContrastVsDepth import Results
+from ParallelTightFocusContrastVsDepth import Results, Tightfocus_HG, Tightfocus_LG
 from BeamQuality import STED_psf_fwhm
 from DebyeWolfIntegral import SpotSizeCalculator
 from SeedBeams import Gaussian_beam
@@ -13,8 +12,7 @@ from SeedBeams import Gaussian_beam
 # Parameters
 # Saturation factor is the peak power of an ideal donut over the saturation power, for either type.
 # To simulate increasing donut power, increase this factor.
-# TODO: Use probability distribution of fluorescence and depletion instead of all or nothing exciitation and depletion
-# TODO: Fix I_sat estimation as mean of 4 samples instead.
+
 saturation_factor = 20
 
 LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
@@ -43,18 +41,34 @@ if plot_STED_PSF_fwhm:
     excitation_spot_size = SpotSizeCalculator(LG[0].focus_depth,LG[0].beam_radius,LG[0].n_h,LG[0].wavelength,0) # 1/e^2 diameter of a gaussian at focus
     excitationBeam = (Gaussian_beam(xy_cells,dx,excitation_spot_size/2))**2
     fluorescenceThreshold = (1/2.71**2)*np.max(excitationBeam)
-    
-    I_sat_LG = 1/saturation_factor*np.max(LG[0].intensity_profile[7])
-    I_sat_HG = 1/saturation_factor*np.max(HG[0].intensity_profile[7])
+    _,_, ideal_donut_LG = Tightfocus_LG([0,'',0])
+    _,_, ideal_donut_HG = Tightfocus_HG([0,'',0])
+
+    # Normalizing power to unity
+    ideal_donut_LG = ideal_donut_LG/(np.sum(ideal_donut_LG)*dx**2)
+    ideal_donut_HG = ideal_donut_HG/(np.sum(ideal_donut_HG)*dx**2)
+
+    #I_sat_LG = 1/saturation_factor*np.max(ideal_donut_LG)
+    #I_sat_HG = 1/saturation_factor*np.max(ideal_donut_HG)
+    I_sat = 1/saturation_factor*np.max(ideal_donut_LG)
 
     PSF_vs_depth_LG = np.zeros((len(LG[0].depths),num_runs))
     PSF_vs_depth_HG = np.zeros(PSF_vs_depth_LG.shape)
     for run_number in range(num_runs):
         for depth_index in range(len(depths)):
+            # Note: The absorption mean free path is vastly bigger than scattering mean free path
+            # The scattering angles are also small in tissue, so photons are unlikely to be scattered out of the simulation volume.
+            # Therefore, I'm assuming that the total optical power in the finite difference simulation volume is conserved for every transverse cross section. This should be true to within a small margin of error
+            # However, I find that the total power calculated at the focual plane is sometimes a little larger than what was sent in. This is most likely due to errors from discretization.
+            # So I'm normalizing power at focus before calculating the STED FWHM
+
             field_profile_LG = LG[run_number].intensity_profile[depth_index]
-            PSF_vs_depth_LG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_LG,fluorescenceThreshold , I_sat_LG, fast_mode)
+            field_profile_LG = field_profile_LG/(np.sum(field_profile_LG)*dx**2)
+            PSF_vs_depth_LG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_LG,fluorescenceThreshold , I_sat, fast_mode)
+
             field_profile_HG = HG[run_number].intensity_profile[depth_index]
-            PSF_vs_depth_HG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_HG,fluorescenceThreshold , I_sat_HG, fast_mode)
+            field_profile_HG = field_profile_HG/(np.sum(field_profile_HG)*dx**2)
+            PSF_vs_depth_HG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_HG,fluorescenceThreshold , I_sat, fast_mode)
             '''
             plt.pcolormesh(excitationBeam>fluorescenceThreshold)
             plt.show()

@@ -1,0 +1,8 @@
+The FD solver introduces a background E-field because of the instability problem.
+This likely makes contrast lower as we go deeper into tissue.
+
+Details:
+In the following line in PropagationAlgorithm.py, frequencies above n/lambda are suppressed, where n is the 1% low value.
+alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-np.percentile(index,1)**2/wavelength**2,0))
+
+However, this still does not suppress the problem completely.
