@@ -61,7 +61,7 @@ def optimal_cell_size(spot_size,FDFD_dx,min_cells):
     #preferred_cell_sizes = np.genfromtxt('Fast_FFT_lengths.csv', dtype = 'int')     # The values of cell sized for which FFT is fastest
     for i in range(len(preferred_cell_sizes)):
         if preferred_cell_sizes[i] >= minimum_cell_size:
-            return preferred_cell_sizes[i]
+            return int(preferred_cell_sizes[i])     # Python int is variable size, so I don't have to worry about overflow.
     
     return minimum_cell_size    # Only reaches this return statement if minimum_cell_size is greater than 2047. This will be extremely slow on any computer as of 2023.
 
