@@ -19,9 +19,9 @@ n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 
-FDFD_dx = 50e-9     # Recommended to keep this below 50 nm ideally.
+FDFD_dx = 25e-9     # Recommended to keep this below 50 nm ideally.
 FDFD_dz = FDFD_dx * 0.8
-unique_layers = 100    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
+unique_layers = 150    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
 wavelength = 500e-9
 min_xy_cells = 255      # Minimum cells to be used. This is important because 10 or so cells on the edge form an absorbing boundary.
 
@@ -208,7 +208,7 @@ def Tightfocus_LG(args):
 
 
 #### Test block ####
-
+'''
 if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
@@ -231,9 +231,9 @@ if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
     shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
-    p = Pool(32)                # Remember! This executes everything outside this if statement!
+    p = Pool(64)                # Remember! This executes everything outside this if statement!
     num_tissue_instances = 8    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
-    num_runs = 40               # Number of runs. Keep this a multiple of num_tissue_instances.
+    num_runs = 16               # Number of runs. Keep this a multiple of num_tissue_instances.
 
     LG_result = []              # List of objects of class 'Results'
     HG_result = []
@@ -299,4 +299,3 @@ if __name__ == '__main__':
 
     td = timedelta(seconds=time.time() - start_time)
     print('Time taken (hh:mm:ss):', td)
-    '''
