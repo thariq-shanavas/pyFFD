@@ -22,7 +22,7 @@ def iFFT2(A):
     # This function assumens an N*N grid, equally sampled in space along fx and fy
     return np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(A)))
 
-def FFT_benchmark(max_cell_size = 2048):
+def FFT_benchmark(max_cell_size = 3000):
     # 2D FFT is one of the main bottlenecks in the simulation. The speed of FFT depends on the size of the matrix non-trivially, and this depends on the CPU too.
     # For example, on an AMD Ryzen 5 3600, 2047*2047 FFT is 3 times faster than 2048*2048. On most other systems, 2048*2048 matrices are faster.
     # I suspect this is due to some SIMD shennanigans.

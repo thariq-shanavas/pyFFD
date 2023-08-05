@@ -231,7 +231,7 @@ if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
     shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
-    p = Pool(64)                # Remember! This executes everything outside this if statement!
+    p = Pool(48)                # Remember! This executes everything outside this if statement!
     num_tissue_instances = 8    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
     num_runs = 16               # Number of runs. Keep this a multiple of num_tissue_instances.
 
