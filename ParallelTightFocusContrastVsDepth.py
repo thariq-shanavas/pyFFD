@@ -19,7 +19,7 @@ n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 
-FDFD_dx = 25e-9     # Recommended to keep this below 50 nm ideally.
+FDFD_dx = 50e-9     # Recommended to keep this below 50 nm ideally.
 FDFD_dz = FDFD_dx * 0.8
 unique_layers = 111    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
 wavelength = 500e-9
@@ -106,7 +106,7 @@ def Tightfocus_HG(args):
         Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
     else:
         [Ux[:,:,2], Uy[:,:,2], Uz[:,:,2]] = [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]]
-    HG10_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
+    HG10_Focus_Intensity = np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2
 
     #### Second HG beam ####
 
@@ -123,7 +123,7 @@ def Tightfocus_HG(args):
         Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,FDFD_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
     else:
         [Ux[:,:,2], Uy[:,:,2], Uz[:,:,2]] = [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]]
-    HG01_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
+    HG01_Focus_Intensity = np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2
 
     Focus_Intensity = HG01_Focus_Intensity+HG10_Focus_Intensity
 
@@ -189,7 +189,7 @@ def Tightfocus_LG(args):
     else:
         [Ux[:,:,2], Uy[:,:,2], Uz[:,:,2]] = [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]]
     
-    LG_Focus_Intensity = np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2
+    LG_Focus_Intensity = np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2
 
     plot_LG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,LG_Focus_Intensity,FDFD_depth,run_number)
 
@@ -208,7 +208,7 @@ def Tightfocus_LG(args):
 
 
 #### Test block ####
-'''
+
 if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
@@ -299,3 +299,4 @@ if __name__ == '__main__':
 
     td = timedelta(seconds=time.time() - start_time)
     print('Time taken (hh:mm:ss):', td)
+'''
