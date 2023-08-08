@@ -21,7 +21,7 @@ g = 0.92    # Anisotropy factor
 
 FDFD_dx = 25e-9     # Recommended to keep this below 50 nm ideally.
 FDFD_dz = FDFD_dx * 0.8
-unique_layers = 150    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
+unique_layers = 111    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
 wavelength = 500e-9
 min_xy_cells = 255      # Minimum cells to be used. This is important because 10 or so cells on the edge form an absorbing boundary.
 
@@ -92,8 +92,8 @@ def Tightfocus_HG(args):
     if xy_cells<4*min_N:
         raise ValueError('Increase resolution!')
 
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,2040)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-FDFD_dz,FDFD_dx,2040)
+    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,4096)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-FDFD_dz,FDFD_dx,4096)
 
     Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
@@ -113,8 +113,8 @@ def Tightfocus_HG(args):
     (u,v) = (0,1)   # Mode numbers for HG beam
     seed_x = HG_beam(xy_cells, dx, beam_radius, u,v)    # This is well behaved and does not fill in at the focus
     seed_y = np.zeros(seed_x.shape)
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,2040)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-FDFD_dz,FDFD_dx,2040)
+    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,4096)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-FDFD_dz,FDFD_dx,4096)
 
     [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
     [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
@@ -174,8 +174,8 @@ def Tightfocus_LG(args):
     if xy_cells<4*min_N:
         raise ValueError('Increase resolution!')
 
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,2040)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-FDFD_dz,FDFD_dx,2040)
+    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth,FDFD_dx,4096)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,dx,wavelength,n_h,focus_depth,FDFD_depth-FDFD_dz,FDFD_dx,4096)
 
     Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
@@ -231,9 +231,9 @@ if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
     shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
-    p = Pool(48)                # Remember! This executes everything outside this if statement!
-    num_tissue_instances = 8    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
-    num_runs = 16               # Number of runs. Keep this a multiple of num_tissue_instances.
+    p = Pool(32)                # Remember! This executes everything outside this if statement!
+    num_tissue_instances = 6    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
+    num_runs = 12               # Number of runs. Keep this a multiple of num_tissue_instances.
 
     LG_result = []              # List of objects of class 'Results'
     HG_result = []
