@@ -267,7 +267,7 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavel
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     f = 1/(dx*xy_cells)*indices
     k0 = 2*np.pi/wavelength
-    steps = int(distance/dz)-2
+    steps = int(distance/dz)
     fxfx,fyfy = np.meshgrid(f,f)
     
     
