@@ -12,14 +12,15 @@ from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 
 
+FDFD_dz = 25e-9
 beam_radius = 1e-3
 focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
 #depths = np.array([40e-6,35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
-depths = np.array([35e-6])
+depths = np.array([15e-6])
 section_depth = 10e-6   # Increase resolution every 10 microns in depth
-min_FDFD_dx = 40e-9
+min_FDFD_dx = 100e-9
 suppress_evanescent = True
-resolution_factor = 20  # Increase this for finer resolution
+resolution_factor = 15  # Increase this for finer resolution
 
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
@@ -40,7 +41,7 @@ for depth in depths:
     spot_size_at_end_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,(depth-depth%section_depth))
     spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,depth)
     FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,min_FDFD_dx)
-    FDFD_dz = 0.8*FDFD_dx
+    #FDFD_dz = 0.8*FDFD_dx
     propagated_distance = (depth%section_depth)
 
     xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
@@ -56,16 +57,18 @@ for depth in depths:
 
     [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
     [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
-    plt.pcolormesh(np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
+    axis = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+    plt.pcolormesh(axis,axis,np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
     plt.colorbar()
     plt.show()
 
-    n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
+    # n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
+    n = n_h*np.ones((xy_cells,xy_cells,20))
     print("Propagating "+str(int(10**6*propagated_distance))+" microns with dx = "+str(int(10**9*FDFD_dx))+" nm and xy_cells = "+str(xy_cells))
 
 
     Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,propagated_distance, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
-    plt.pcolormesh(np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
+    plt.pcolormesh(axis,axis,np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
     plt.colorbar()
     plt.show()
 
@@ -77,7 +80,7 @@ for depth in depths:
 
         original_axis = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
         FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,min_FDFD_dx)
-        FDFD_dz = 0.8*FDFD_dx
+        #FDFD_dz = 0.8*FDFD_dx
         xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
         new_axes = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
         xx_new, yy_new = np.meshgrid(new_axes,new_axes, indexing='ij')  # Mesh grid used for exporting data
@@ -94,9 +97,10 @@ for depth in depths:
         Uz_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,1], bounds_error = True, method='linear')((xx_new, yy_new))
 
         [Ux, Uy, Uz] = [Ux_new, Uy_new, Uz_new]
-        n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
+        #n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
+        n = n_h*np.ones((xy_cells,xy_cells,20))
         print("Propagating "+str(int(10**6*section_depth))+" microns with dx = "+str(int(10**9*FDFD_dx))+" nm and xy_cells = "+str(xy_cells))
-        plt.pcolormesh(np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
+        plt.pcolormesh(xx_new, yy_new, np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
         plt.colorbar()
         plt.show()
         Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,section_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
@@ -110,6 +114,16 @@ export_axes = 10**6*dx_for_export*np.linspace(-exportResolution/2,exportResoluti
 xx_export, yy_export = np.meshgrid(export_axes,export_axes, indexing='ij')  # Mesh grid used for exporting data
 export_field = RegularGridInterpolator((original_axis,original_axis),LG_Focus_Intensity, bounds_error = True, method='linear')((xx_export, yy_export))
 
-plt.pcolormesh(export_field)
+plt.pcolormesh(xx_export, yy_export,export_field)
 plt.colorbar()
+plt.title("FDFD donut")
+plt.show()
+
+Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,0,dx_for_export,4096)
+Ideal_PSF = np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2
+xy_cells = np.shape(Ex)[0]
+axis = 10**6*dx_for_export*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+plt.pcolormesh(axis,axis,Ideal_PSF)
+plt.colorbar()
+plt.title("Ideal donut")
 plt.show()
