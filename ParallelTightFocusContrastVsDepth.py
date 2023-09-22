@@ -6,21 +6,27 @@ from FieldPlots import VortexNull, plot_HG, plot_LG
 from GenerateRandomTissue import RandomTissue
 from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from multiprocessing import Pool, shared_memory
+from multiprocessing.resource_tracker import unregister
 from FriendlyFourierTransform import optimal_cell_size
 import copy
 from datetime import timedelta
 from scipy.interpolate import RegularGridInterpolator
+import matplotlib.pyplot as plt
 
 # Simulation parameters
 beam_radius = 1e-3
 focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
-depths = np.array([40e-6,35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
+#depths = np.array([5e-6, 10e-6, 15e-6, 20e-6, 25e-6, 30e-6])      # Calculate the contrast at these tissue depths
+depths = np.array([5e-6, 10e-6])
+num_processes = 6
+num_tissue_instances = 2    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
+num_runs = 2               # Number of runs. Keep this a multiple of num_tissue_instances.
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 
-FDFD_dx = 50e-9     # Recommended to keep this below 50 nm ideally.
-FDFD_dz = FDFD_dx * 0.8
+FDFD_dx = 50e-9
+FDFD_dz = 25e-9
 unique_layers = 111    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
 wavelength = 500e-9
 min_xy_cells = 255      # Minimum cells to be used. This is important because 10 or so cells on the edge form an absorbing boundary.
@@ -125,12 +131,13 @@ def Tightfocus_HG(args):
         [Ux[:,:,2], Uy[:,:,2], Uz[:,:,2]] = [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]]
     HG01_Focus_Intensity = np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2
 
-    Focus_Intensity = HG01_Focus_Intensity+HG10_Focus_Intensity
+    Focus_Intensity = (HG01_Focus_Intensity+HG10_Focus_Intensity)/2
 
     plot_HG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,HG10_Focus_Intensity,HG01_Focus_Intensity,Focus_Intensity,FDFD_depth,run_number)
 
     Contrast,Contrast_std_deviation = VortexNull(Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
     if shared_mem_name != '':
+        unregister(existing_shm._name, 'shared_memory')
         existing_shm.close()
 
     # For saving results
@@ -195,6 +202,7 @@ def Tightfocus_LG(args):
 
     Contrast,Contrast_std_deviation = VortexNull(LG_Focus_Intensity, FDFD_dx, beam_type, cross_sections = 19, num_samples = 1000)
     if shared_mem_name != '':
+        unregister(existing_shm._name, 'shared_memory')
         existing_shm.close()
 
     # For saving results
@@ -208,7 +216,7 @@ def Tightfocus_LG(args):
 
 
 #### Test block ####
-
+'''
 if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
@@ -224,6 +232,9 @@ if __name__ == '__main__':
     # print(Tightfocus_LG([20e-6, shared_mem_name, 10]))
     Contrast, Contrast_std_deviation, export_field = Tightfocus_LG([10e-6, shared_mem_name, 100])
     print(Contrast, Contrast_std_deviation,np.sum(export_field))
+    plt.pcolormesh(np.abs(export_field)**2)
+    plt.savefig("Results/LG_10um.png")
+    plt.close()
     shm.unlink()
 '''
 if __name__ == '__main__':
@@ -231,9 +242,7 @@ if __name__ == '__main__':
     print('Cell size is ' + str(global_xy_cells)+'x'+str(global_xy_cells))
     print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
     shared_memory_bytes = int(global_xy_cells*global_xy_cells*unique_layers*4)  # float32 dtype: 4 bytes
-    p = Pool(32)                # Remember! This executes everything outside this if statement!
-    num_tissue_instances = 6    # Number of instances of tissue to generate and keep in memory. 2048x2048x70 grid takes 1.1 GB RAM. Minimal benefit to increasing beyond number of threads.
-    num_runs = 12               # Number of runs. Keep this a multiple of num_tissue_instances.
+    p = Pool(num_processes)                # Remember! This executes everything outside this if statement!
 
     LG_result = []              # List of objects of class 'Results'
     HG_result = []
@@ -288,6 +297,7 @@ if __name__ == '__main__':
                 tmp_index = tmp_index + 1
 
             # Garbage collector should automatically do this. However, some machines raise a memory leak warning if shared memory is not manually unlinked.
+            shared_memory_blocks[tissue_instance_number].close()
             shared_memory_blocks[tissue_instance_number].unlink()
 
             # Save results. The Results object is mutable in Python, so I need to deepcopy it.
@@ -299,4 +309,3 @@ if __name__ == '__main__':
 
     td = timedelta(seconds=time.time() - start_time)
     print('Time taken (hh:mm:ss):', td)
-'''

@@ -42,11 +42,11 @@ if plot_STED_PSF_fwhm:
     excitationBeam = (Gaussian_beam(xy_cells,dx,excitation_spot_size/2))**2
     fluorescenceThreshold = (1/2.71**2)*np.max(excitationBeam)
     _,_, ideal_donut_LG = Tightfocus_LG([0,'',0])
-    _,_, ideal_donut_HG = Tightfocus_HG([0,'',0])
+    #_,_, ideal_donut_HG = Tightfocus_HG([0,'',0])
 
     # Normalizing power to unity
     ideal_donut_LG = ideal_donut_LG/(np.sum(ideal_donut_LG)*dx**2)
-    ideal_donut_HG = ideal_donut_HG/(np.sum(ideal_donut_HG)*dx**2)
+    #ideal_donut_HG = ideal_donut_HG/(np.sum(ideal_donut_HG)*dx**2)
 
     #I_sat_LG = 1/saturation_factor*np.max(ideal_donut_LG)
     #I_sat_HG = 1/saturation_factor*np.max(ideal_donut_HG)
@@ -63,11 +63,11 @@ if plot_STED_PSF_fwhm:
             # So I'm normalizing power at focus before calculating the STED FWHM
 
             field_profile_LG = LG[run_number].intensity_profile[depth_index]
-            field_profile_LG = field_profile_LG/(np.sum(field_profile_LG)*dx**2)
+            #field_profile_LG = field_profile_LG/(np.sum(field_profile_LG)*dx**2)
             PSF_vs_depth_LG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_LG,fluorescenceThreshold , I_sat, fast_mode)
 
             field_profile_HG = HG[run_number].intensity_profile[depth_index]
-            field_profile_HG = field_profile_HG/(np.sum(field_profile_HG)*dx**2)
+            #field_profile_HG = field_profile_HG/(np.sum(field_profile_HG)*dx**2)
             PSF_vs_depth_HG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_HG,fluorescenceThreshold , I_sat, fast_mode)
             '''
             plt.pcolormesh(excitationBeam>fluorescenceThreshold)

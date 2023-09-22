@@ -18,9 +18,9 @@ focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is 
 #depths = np.array([40e-6,35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
 depths = np.array([15e-6])
 section_depth = 10e-6   # Increase resolution every 10 microns in depth
-min_FDFD_dx = 100e-9
+max_FDFD_dx = 50e-9
 suppress_evanescent = True
-resolution_factor = 15  # Increase this for finer resolution
+resolution_factor = 40  # Increase this for finer resolution
 
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
@@ -40,7 +40,7 @@ for depth in depths:
     # Propagate depth modulo section_depth first
     spot_size_at_end_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,(depth-depth%section_depth))
     spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,depth)
-    FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,min_FDFD_dx)
+    FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,max_FDFD_dx)
     #FDFD_dz = 0.8*FDFD_dx
     propagated_distance = (depth%section_depth)
 
@@ -62,8 +62,8 @@ for depth in depths:
     plt.colorbar()
     plt.show()
 
-    # n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
-    n = n_h*np.ones((xy_cells,xy_cells,20))
+    n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
+    #n = n_h*np.ones((xy_cells,xy_cells,20))
     print("Propagating "+str(int(10**6*propagated_distance))+" microns with dx = "+str(int(10**9*FDFD_dx))+" nm and xy_cells = "+str(xy_cells))
 
 
@@ -79,7 +79,7 @@ for depth in depths:
         spot_size_at_end_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,distance_left_to_go-section_depth)
 
         original_axis = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-        FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,min_FDFD_dx)
+        FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,max_FDFD_dx)
         #FDFD_dz = 0.8*FDFD_dx
         xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
         new_axes = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
@@ -97,8 +97,8 @@ for depth in depths:
         Uz_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,1], bounds_error = True, method='linear')((xx_new, yy_new))
 
         [Ux, Uy, Uz] = [Ux_new, Uy_new, Uz_new]
-        #n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
-        n = n_h*np.ones((xy_cells,xy_cells,20))
+        n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
+        #n = n_h*np.ones((xy_cells,xy_cells,20))
         print("Propagating "+str(int(10**6*section_depth))+" microns with dx = "+str(int(10**9*FDFD_dx))+" nm and xy_cells = "+str(xy_cells))
         plt.pcolormesh(xx_new, yy_new, np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
         plt.colorbar()
