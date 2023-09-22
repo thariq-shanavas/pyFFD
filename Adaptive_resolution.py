@@ -10,13 +10,14 @@ import copy
 from datetime import timedelta
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
+from ParallelTightFocusContrastVsDepth import Results
 
 
 FDFD_dz = 25e-9
 beam_radius = 1e-3
 focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
 #depths = np.array([40e-6,35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
-depths = np.array([15e-6])
+depths = np.array([10e-6])
 section_depth = 10e-6   # Increase resolution every 10 microns in depth
 max_FDFD_dx = 50e-9
 suppress_evanescent = True
@@ -33,10 +34,11 @@ min_xy_cells = 255      # Minimum cells to be used. This is important because 10
 exportResolution = 1000     # Save fields as a resultSaveResolution x resultSaveResolution matrix. Keep this even.
 dx_for_export = 6*SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)/exportResolution
 
-# We share the same procedurally generated tissue across many simulations. We find the volume needed for the largest simulation
-for depth in depths:
-    
-    
+LG_result = []
+tmp_field_exports_LG  = [np.zeros((exportResolution,exportResolution))]*len(depths)
+
+for index in range(len(depths)):
+    depth = depths[index]
     # Propagate depth modulo section_depth first
     spot_size_at_end_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,(depth-depth%section_depth))
     spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,depth)
@@ -58,21 +60,13 @@ for depth in depths:
     [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
     [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
     axis = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-    plt.pcolormesh(axis,axis,np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
-    plt.colorbar()
-    plt.show()
-
-    n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
-    #n = n_h*np.ones((xy_cells,xy_cells,20))
-    print("Propagating "+str(int(10**6*propagated_distance))+" microns with dx = "+str(int(10**9*FDFD_dx))+" nm and xy_cells = "+str(xy_cells))
-
-
-    Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,propagated_distance, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
-    plt.pcolormesh(axis,axis,np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
-    plt.colorbar()
-    plt.show()
-
-    distance_left_to_go = (depth-depth%section_depth)
+    
+    if propagated_distance>FDFD_dz:
+        n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
+        #n = n_h*np.ones((xy_cells,xy_cells,20))
+        print("Propagating "+str(int(10**6*propagated_distance))+" microns with dx = "+str(int(10**9*FDFD_dx))+" nm and xy_cells = "+str(xy_cells))
+        Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,propagated_distance, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
+    distance_left_to_go = (depth-propagated_distance)
     
     for _ in range(int(distance_left_to_go/section_depth)):
         spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,distance_left_to_go)
@@ -100,24 +94,19 @@ for depth in depths:
         n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, 0])
         #n = n_h*np.ones((xy_cells,xy_cells,20))
         print("Propagating "+str(int(10**6*section_depth))+" microns with dx = "+str(int(10**9*FDFD_dx))+" nm and xy_cells = "+str(xy_cells))
-        plt.pcolormesh(xx_new, yy_new, np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)
-        plt.colorbar()
-        plt.show()
         Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,section_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
         distance_left_to_go = distance_left_to_go - section_depth
 
-LG_Focus_Intensity = np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2
-exportResolution = 1000     # Save fields as a resultSaveResolution x resultSaveResolution matrix. Keep this even.
-dx_for_export = 6*SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)/exportResolution
-original_axis = 10**6*FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-export_axes = 10**6*dx_for_export*np.linspace(-exportResolution/2,exportResolution/2-1,exportResolution,dtype=np.int_)
-xx_export, yy_export = np.meshgrid(export_axes,export_axes, indexing='ij')  # Mesh grid used for exporting data
-export_field = RegularGridInterpolator((original_axis,original_axis),LG_Focus_Intensity, bounds_error = True, method='linear')((xx_export, yy_export))
+    LG_Focus_Intensity = np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2
+    exportResolution = 1000     # Save fields as a resultSaveResolution x resultSaveResolution matrix. Keep this even.
+    dx_for_export = 6*SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)/exportResolution
+    original_axis = 10**6*FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+    export_axes = 10**6*dx_for_export*np.linspace(-exportResolution/2,exportResolution/2-1,exportResolution,dtype=np.int_)
+    xx_export, yy_export = np.meshgrid(export_axes,export_axes, indexing='ij')  # Mesh grid used for exporting data
+    tmp_field_exports_LG[index] = RegularGridInterpolator((original_axis,original_axis),LG_Focus_Intensity, bounds_error = True, method='linear')((xx_export, yy_export))
 
-plt.pcolormesh(xx_export, yy_export,export_field)
-plt.colorbar()
-plt.title("FDFD donut")
-plt.show()
+LG_result.append(copy.deepcopy(Results([0]*len(depths),[0]*len(depths),tmp_field_exports_LG)))
+np.save('Results/Contrast_LG', LG_result)
 
 Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,0,dx_for_export,4096)
 Ideal_PSF = np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2
@@ -126,4 +115,10 @@ axis = 10**6*dx_for_export*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=n
 plt.pcolormesh(axis,axis,Ideal_PSF)
 plt.colorbar()
 plt.title("Ideal donut")
+plt.show()
+
+plt.figure()
+plt.pcolormesh(xx_export, yy_export,tmp_field_exports_LG[0])
+plt.colorbar()
+plt.title("FDFD donut")
 plt.show()

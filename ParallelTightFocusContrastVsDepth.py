@@ -6,7 +6,7 @@ from FieldPlots import VortexNull, plot_HG, plot_LG
 from GenerateRandomTissue import RandomTissue
 from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from multiprocessing import Pool, shared_memory
-from multiprocessing.resource_tracker import unregister
+from multiprocessing.resource_tracker import unregister # Workaround for this bug: https://github.com/python/cpython/issues/82300
 from FriendlyFourierTransform import optimal_cell_size
 import copy
 from datetime import timedelta
