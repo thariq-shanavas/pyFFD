@@ -89,12 +89,13 @@ def Tightfocus_LG_adaptive(args):
         Uy_new = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
         Ux_new = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
-        Ux_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,0], bounds_error = True, method='linear')((xx_new, yy_new))
-        Ux_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,1], bounds_error = True, method='linear')((xx_new, yy_new))
-        Uy_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,0], bounds_error = True, method='linear')((xx_new, yy_new))
-        Uy_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,1], bounds_error = True, method='linear')((xx_new, yy_new))
-        Uz_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,0], bounds_error = True, method='linear')((xx_new, yy_new))
-        Uz_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,1], bounds_error = True, method='linear')((xx_new, yy_new))
+        # Bounds error has to be set to False in case (depth%section_depth) is zero.
+        Ux_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,0], bounds_error = False, method='linear')((xx_new, yy_new))
+        Ux_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,1], bounds_error = False, method='linear')((xx_new, yy_new))
+        Uy_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,0], bounds_error = False, method='linear')((xx_new, yy_new))
+        Uy_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,1], bounds_error = False, method='linear')((xx_new, yy_new))
+        Uz_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,0], bounds_error = False, method='linear')((xx_new, yy_new))
+        Uz_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,1], bounds_error = False, method='linear')((xx_new, yy_new))
 
         [Ux, Uy, Uz] = [Ux_new, Uy_new, Uz_new]
         n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, run_number])
@@ -114,7 +115,7 @@ def Tightfocus_LG_adaptive(args):
     plt.pcolormesh(xx_export, yy_export,export_field)
     plt.colorbar()
     plt.title(str("{:02d}".format(int(1e6*depth)))+'um_run'+str("{:02d}".format(run_number)))
-    plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*depth)))+'um_run'+str("{:02d}".format(0))+'.png', bbox_inches = 'tight', dpi=500)
+    plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*depth)))+'um_run'+str("{:02d}".format(run_number))+'.png', bbox_inches = 'tight', dpi=500)
     plt.close()
     print('Simulation (LG) with depth %2.0f um, run number %2.0f exiting' %(10**6*depth, run_number))
     return 0, 0, export_field
