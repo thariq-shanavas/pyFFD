@@ -1,5 +1,5 @@
 __pycache__/
-Results/
+Results*
 *.xlsx
 *.mat
 *.npy

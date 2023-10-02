@@ -24,13 +24,13 @@ num_runs = len(LG)
 
 if plot_contrast:
     contrast_vs_depth_LG = np.zeros((len(LG[0].depths),num_runs))
-    contrast_vs_depth_HG = np.zeros((len(HG[0].depths),num_runs))
+    #contrast_vs_depth_HG = np.zeros((len(HG[0].depths),num_runs))
     for i in range(num_runs):
         contrast_vs_depth_LG[:,i] = LG[i].contrasts
-        contrast_vs_depth_HG[:,i] = HG[i].contrasts
+        #contrast_vs_depth_HG[:,i] = HG[i].contrasts
 
     plt.plot(LG[0].depths,np.median(contrast_vs_depth_LG,axis=1),label='LG')
-    plt.plot(HG[0].depths,np.median(contrast_vs_depth_HG,axis=1),label='HG')
+    #plt.plot(HG[0].depths,np.median(contrast_vs_depth_HG,axis=1),label='HG')
     plt.legend()
 
 
@@ -53,7 +53,7 @@ if plot_STED_PSF_fwhm:
     I_sat = 1/saturation_factor*np.max(ideal_donut_LG)
 
     PSF_vs_depth_LG = np.zeros((len(LG[0].depths),num_runs))
-    PSF_vs_depth_HG = np.zeros(PSF_vs_depth_LG.shape)
+    #PSF_vs_depth_HG = np.zeros(PSF_vs_depth_LG.shape)
     for run_number in range(num_runs):
         for depth_index in range(len(depths)):
             # Note: The absorption mean free path is vastly bigger than scattering mean free path
@@ -66,9 +66,9 @@ if plot_STED_PSF_fwhm:
             #field_profile_LG = field_profile_LG/(np.sum(field_profile_LG)*dx**2)
             PSF_vs_depth_LG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_LG,fluorescenceThreshold , I_sat, fast_mode)
 
-            field_profile_HG = HG[run_number].intensity_profile[depth_index]
+            #field_profile_HG = HG[run_number].intensity_profile[depth_index]
             #field_profile_HG = field_profile_HG/(np.sum(field_profile_HG)*dx**2)
-            PSF_vs_depth_HG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_HG,fluorescenceThreshold , I_sat, fast_mode)
+            #PSF_vs_depth_HG[depth_index,run_number] = 10**9*STED_psf_fwhm(dx,excitationBeam,field_profile_HG,fluorescenceThreshold , I_sat, fast_mode)
             '''
             plt.pcolormesh(excitationBeam>fluorescenceThreshold)
             plt.show()
@@ -78,18 +78,20 @@ if plot_STED_PSF_fwhm:
             plt.show()
             '''
     LG_figure_of_merit = np.median(PSF_vs_depth_LG,axis=1)
-    HG_figure_of_merit = np.median(PSF_vs_depth_HG,axis=1)
+    #HG_figure_of_merit = np.median(PSF_vs_depth_HG,axis=1)
     fig,ax = plt.subplots()
     plt.plot(depths,LG_figure_of_merit,label='LG', marker = 'o')
     detection_count_LG = np.count_nonzero(PSF_vs_depth_LG,axis=1)
+    '''
     for i, txt in enumerate(detection_count_LG):
         ax.annotate(txt, (depths[i], LG_figure_of_merit[i]-5))
-        
+    
     plt.plot(depths,HG_figure_of_merit,label='HG', marker = 'o')
 
     detection_count_HG = np.count_nonzero(PSF_vs_depth_HG,axis=1)
     for i, txt in enumerate(detection_count_HG):
         ax.annotate(txt, (depths[i], HG_figure_of_merit[i]-5))
+    '''
     plt.legend()
 
     plt.ylim(bottom = 0)
