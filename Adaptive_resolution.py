@@ -10,7 +10,7 @@ import copy
 from datetime import timedelta
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
-from ParallelTightFocusContrastVsDepth import Results
+from helper_classes import Parameters_class,Results_class
 from multiprocessing import Pool
 
 
@@ -25,7 +25,6 @@ section_depth = 10e-6   # Increase resolution every 10 microns in depth
 max_FDFD_dx = 40e-9
 suppress_evanescent = True
 resolution_factor = 40  # Increase this for finer resolution
-
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
@@ -36,6 +35,7 @@ min_xy_cells = 255      # Minimum cells to be used. This is important because 10
 
 exportResolution = 1000     # Save fields as a resultSaveResolution x resultSaveResolution matrix. Keep this even.
 dx_for_export = 6*SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)/exportResolution
+parameters = Parameters_class(depths,dx_for_export,wavelength,max_FDFD_dx,resolution_factor,FDFD_dz,beam_radius,focus_depth,unique_layers,n_h,ls,g)
 
 LG_result = []
 tmp_field_exports_LG  = [np.zeros((exportResolution,exportResolution))]*len(depths)
@@ -44,36 +44,53 @@ def Tightfocus_LG_adaptive(args):
     depth = args[0]
     shared_mem_name = args[1]
     run_number = args[2]
+    
     print('Simulation (LG) with depth %2.0f um, run number %2.0f starting...' %(10**6*depth, run_number))
 
-    # Propagate depth modulo section_depth first
-    spot_size_at_end_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,(depth-depth%section_depth))
-    spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,depth)
-    FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,max_FDFD_dx)
-    #FDFD_dz = 0.8*FDFD_dx
-    propagated_distance = (depth%section_depth)
+    if (depth%section_depth) > FDFD_dz:
 
-    xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
-    seed_dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
-    seed_x = LG_OAM_beam(xy_cells, seed_dx, beam_radius, 1)
-    seed_y = 1j*seed_x
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth,FDFD_dx,2048)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth-FDFD_dz,FDFD_dx,2048)
+        propagated_distance = (depth%section_depth)
+        spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,depth)
+        spot_size_at_end_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,(depth-propagated_distance))
+        FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,max_FDFD_dx)
+        xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
+        seed_dx = 5*beam_radius/(xy_cells)                 # Resolution for initial seed beam generation only.
+        
+        seed_x = LG_OAM_beam(xy_cells, seed_dx, beam_radius, 1)
+        seed_y = 1j*seed_x
+        Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth,FDFD_dx,2048)
+        Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth-FDFD_dz,FDFD_dx,2048)
+        
+        Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+        Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+        Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
-    Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
-    Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
-    Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+        [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
+        [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
 
-    [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
-    [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
-    #axis = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
-    
-    if propagated_distance>FDFD_dz:
         n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, run_number])
-        #n = n_h*np.ones((xy_cells,xy_cells,20))
         Ux,Uy,Uz = Vector_FiniteDifference(Ux,Uy,Uz,propagated_distance, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
-    distance_left_to_go = (depth-propagated_distance)
-    
+        distance_left_to_go = (depth-propagated_distance)
+
+    else:
+        spot_size = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,depth)
+        FDFD_dx = min(spot_size/resolution_factor,max_FDFD_dx)
+        xy_cells = optimal_cell_size(spot_size, FDFD_dx, min_xy_cells)
+        seed_dx = 5*beam_radius/(xy_cells)
+        seed_x = LG_OAM_beam(xy_cells, seed_dx, beam_radius, 1)
+        seed_y = 1j*seed_x
+        Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth,FDFD_dx,2048)
+        Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth-FDFD_dz,FDFD_dx,2048)
+
+        Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+        Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+        Ux = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+
+        [Ux[:,:,0], Uy[:,:,0], Uz[:,:,0]] = [Ex, Ey, Ez]
+        [Ux[:,:,1], Uy[:,:,1], Uz[:,:,1]] = [Ex2, Ey2, Ez2]
+        distance_left_to_go = depth
+
+
     for _ in range(int(distance_left_to_go/section_depth)):
         spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,distance_left_to_go)
         spot_size_at_end_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,distance_left_to_go-section_depth)
@@ -90,12 +107,12 @@ def Tightfocus_LG_adaptive(args):
         Ux_new = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
 
         # Bounds error has to be set to False in case (depth%section_depth) is zero.
-        Ux_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,0], bounds_error = False, method='linear')((xx_new, yy_new))
-        Ux_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,1], bounds_error = False, method='linear')((xx_new, yy_new))
-        Uy_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,0], bounds_error = False, method='linear')((xx_new, yy_new))
-        Uy_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,1], bounds_error = False, method='linear')((xx_new, yy_new))
-        Uz_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,0], bounds_error = False, method='linear')((xx_new, yy_new))
-        Uz_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,1], bounds_error = False, method='linear')((xx_new, yy_new))
+        Ux_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,0], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Ux_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,1], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Uy_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,0], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Uy_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,1], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Uz_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,0], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Uz_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,1], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
 
         [Ux, Uy, Uz] = [Ux_new, Uy_new, Uz_new]
         n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, run_number])
@@ -118,7 +135,7 @@ def Tightfocus_LG_adaptive(args):
     plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*depth)))+'um_run'+str("{:02d}".format(run_number))+'.png', bbox_inches = 'tight', dpi=500)
     plt.close()
     print('Simulation (LG) with depth %2.0f um, run number %2.0f exiting' %(10**6*depth, run_number))
-    return 0, 0, export_field
+    return export_field
 
 if __name__ == '__main__':
     start_time = time.time()
@@ -144,7 +161,7 @@ if __name__ == '__main__':
             tmp_index = tmp_index + 1
 
         # Save results. The Results object is mutable in Python, so I need to deepcopy it.
-        LG_result.append(copy.deepcopy(Results(np.zeros(len(depths)),np.zeros(len(depths)),tmp_field_exports_LG)))
+        LG_result.append(copy.deepcopy(Results_class(parameters,tmp_field_exports_LG)))
     
     np.save('Results/Contrast_LG', LG_result)
 

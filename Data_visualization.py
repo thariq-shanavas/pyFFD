@@ -16,7 +16,7 @@ from SeedBeams import Gaussian_beam
 saturation_factor = 20
 
 LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
-HG = np.load('Results/Contrast_HG.npy', allow_pickle=True)
+#HG = np.load('Results/Contrast_HG.npy', allow_pickle=True)
 plot_contrast = False
 plot_STED_PSF_fwhm = True
 fast_mode = False
