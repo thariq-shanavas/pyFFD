@@ -37,8 +37,6 @@ exportResolution = 1000     # Save fields as a resultSaveResolution x resultSave
 dx_for_export = 6*SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,0)/exportResolution
 parameters = Parameters_class(depths,dx_for_export,wavelength,max_FDFD_dx,resolution_factor,FDFD_dz,beam_radius,focus_depth,unique_layers,n_h,ls,g)
 
-LG_result = []
-tmp_field_exports_LG  = [np.zeros((exportResolution,exportResolution))]*len(depths)
 
 def Tightfocus_LG_adaptive(args):
     depth = args[0]
