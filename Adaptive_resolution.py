@@ -18,18 +18,18 @@ FDFD_dz = 25e-9
 beam_radius = 1e-3
 focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is not the focal length in air.
 #depths = np.array([40e-6,35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])      # Calculate the contrast at these tissue depths
-num_processes = 32
-num_runs = 5
-depths = np.array([5e-6,10e-6,15e-6,20e-6,25e-6,30e-6,35e-6])
+num_processes = 6
+num_runs = 20
+depths = np.array([2.5e-6,5e-6,7.5e-6,10e-6,12.5e-6,15e-6,17.5e-6,20e-6,22.5e-6,25e-6])
 section_depth = 10e-6   # Increase resolution every 10 microns in depth
-max_FDFD_dx = 40e-9
+max_FDFD_dx = 30e-9
 suppress_evanescent = True
 resolution_factor = 40  # Increase this for finer resolution
 n_h = 1.33  # Homogenous part of refractive index
 ls = 15e-6  # Mean free path in tissue
 g = 0.92    # Anisotropy factor
 
-unique_layers = 111    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
+unique_layers = 110    # Unique layers of refractive index for procedural generation of tissue. Unclear what's the effect of making this small.
 wavelength = 500e-9
 min_xy_cells = 255      # Minimum cells to be used. This is important because 10 or so cells on the edge form an absorbing boundary.
 

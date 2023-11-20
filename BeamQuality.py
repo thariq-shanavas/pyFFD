@@ -1,7 +1,7 @@
 import numpy as np
 from getFWHM_2D import getFWHM_GaussianFitScaledAmp
 
-def STED_psf_fwhm(dx,excitationBeam,depletionBeam, fluorescenceThreshold, I_sat, fast_mode = False):
+def STED_psf_fwhm(dx,excitationBeam,depletionBeam,I_sat):
     # This function approximately calculates the spot size of the STED point spread function
 
     ## If the excitationBeam is brighter than fluorescenceThreshold, the fluorophore is excited.
@@ -18,19 +18,23 @@ def STED_psf_fwhm(dx,excitationBeam,depletionBeam, fluorescenceThreshold, I_sat,
     if dx > 10e-9:
         ValueError("Interpolate the function before calculating STED PSF!")
 
-    if fast_mode:
-        # All or nothing implementation
-        # Fuorophores are deactivated completely above I_sat, instead of an exponential probability falloff.
-        fluorophore_active = np.logical_and((excitationBeam>fluorescenceThreshold),(depletionBeam<I_sat))
-        num_active_fluorphores = fluorophore_active.sum()
-
-        # pi*r**2 = num_active_fluorphores*dx**2
-        # Return diameter = 2*r
-        return 2*dx*np.sqrt(num_active_fluorphores/np.pi)
-    
     # More realistic estimate of FWHM
     # Following https://doi.org/10.1364/OE.16.004154
-    eta = np.exp(-np.log(2)*depletionBeam/I_sat)
+    eta = np.exp(-np.log(2)*np.abs(depletionBeam)/I_sat)
     # Shape of the confocal fluorescence is approximated by the gaussian excitation beam.
+    excitationBeam = np.abs(excitationBeam)/np.sum(np.abs(excitationBeam)**2*dx**2)
     STED_psf = excitationBeam*eta
-    return dx*getFWHM_GaussianFitScaledAmp(STED_psf)
+
+    ## If you use the same formula on a gaussian, you get the FWHM. This is a heuristic.
+    # pi*(FWHM/2)^2 = dx^2 * np.sum(STED_psf>np.max(STED_psf)/2)
+    PSF_diameter = 2*dx*np.sqrt(np.sum(STED_psf>np.max(STED_psf)/2)/3.14)
+
+    xy_cells = np.shape(depletionBeam)[0]
+    axes = dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+    xx, yy = np.meshgrid(axes,axes, indexing='ij')
+    centroid_x = np.average(xx,weights = STED_psf)
+    centroid_y = np.average(yy,weights = STED_psf)
+    centroid_deviation = np.sqrt(centroid_x**2+centroid_y**2)
+    ## Fit gaussian     
+    # PSF_diameter = dx*getFWHM_GaussianFitScaledAmp(STED_psf)
+    return 10**9*PSF_diameter, 10**9*centroid_deviation

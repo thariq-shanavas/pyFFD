@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 filenames = os.listdir('Results')
-depths = np.array([40e-6,35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])
+depths = np.array([35e-6,30e-6,25e-6,20e-6,15e-6,10e-6,5e-6])
 
 for depth in depths:
     
