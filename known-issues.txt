@@ -6,3 +6,8 @@ In the following line in PropagationAlgorithm.py, frequencies above n/lambda are
 alpha = 2*np.pi*np.sqrt(np.maximum(fxfx**2+fyfy**2-np.percentile(index,1)**2/wavelength**2,0))
 
 However, this still does not suppress the problem completely.
+
+The total power of the beam keeps increasing with depth. ???
+For the time being, the workaround is to normalize the power of the donut before calculating STED PSF
+
+The adaptive resolution introduces artefacts when depth is a multiple of the z-step size where the resolution is re-calculated.

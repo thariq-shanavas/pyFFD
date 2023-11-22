@@ -15,7 +15,7 @@ from SeedBeams import LG_OAM_beam
 # Saturation factor is the peak power of an ideal donut over the saturation power, for either type.
 # To simulate increasing donut power, increase this factor.
 
-saturation_factor = 60
+saturation_factor = 40
 
 LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
 HG = np.load('Results/Contrast_HG.npy', allow_pickle=True)

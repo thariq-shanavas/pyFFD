@@ -5,9 +5,12 @@ from SeedBeams import Gaussian_beam
 from ParallelTightFocusContrastVsDepth import Tightfocus_LG
 from DebyeWolfIntegral import SpotSizeCalculator
 from SeedBeams import LG_OAM_beam
+from BeamQuality import STED_psf_fwhm
 
-LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
-saturation_factor = 5
+LG = np.load('Results/Contrast_HG.npy', allow_pickle=True)
+
+depletionBeam = LG[0].intensity_profiles[0]   # 20um
+saturation_factor = 20
 
 
 xy_cells = LG[0].intensity_profiles[0].shape[0]
@@ -17,10 +20,11 @@ ideal_donut_LG = LG_OAM_beam(xy_cells, dx, excitation_spot_size/2, 1)**2
 I_sat = 1/saturation_factor*np.max(ideal_donut_LG)
 
 excitationBeam = (Gaussian_beam(xy_cells,dx,excitation_spot_size/2))**2
-depletionBeam = LG[0].intensity_profiles[3]   # 20um
+
 
 eta = np.exp(-np.log(2)*depletionBeam/I_sat)
 STED_psf = excitationBeam*eta
+plt.figure(figsize=[12,12])
 plt.subplot(221)
 plt.pcolormesh(np.abs(ideal_donut_LG))
 
@@ -33,3 +37,6 @@ plt.pcolormesh(np.abs(depletionBeam))
 
 plt.subplot(224)
 plt.pcolormesh(np.abs(STED_psf))
+plt.show()
+
+print(STED_psf_fwhm(dx,excitationBeam,depletionBeam, I_sat))
