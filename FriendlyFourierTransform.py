@@ -62,6 +62,7 @@ def optimal_cell_size(spot_size,FDFD_dx,min_cells):
     for i in range(len(preferred_cell_sizes)):
         if preferred_cell_sizes[i] >= minimum_cell_size:
             return int(preferred_cell_sizes[i])     # Python int is variable size, so I don't have to worry about overflow.
-    
+
+    raise ValueError("Maximum allowed value of dx is too small. Increase max_FDFD_dx")
     return minimum_cell_size    # Only reaches this return statement if minimum_cell_size is greater than 2047. This will be extremely slow on any computer as of 2023.
 

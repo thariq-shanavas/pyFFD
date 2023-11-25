@@ -75,7 +75,7 @@ plt.plot(depths,LG_figure_of_merit,label='LG', marker = 'o')
 plt.plot(depths,HG_figure_of_merit,label='HG', marker = 'o')
 plt.legend()
 
-plt.ylim(bottom = 0)
+# plt.ylim(bottom = 0)
 plt.gcf().set_dpi(300)
 plt.rcParams.update({'font.size': 12})
 plt.rcParams['pcolor.shading'] = 'auto'
@@ -94,7 +94,7 @@ plt.plot(depths,np.mean(PSF_centroid_deviation_LG,axis=1),label='LG', marker = '
 plt.plot(depths,np.mean(PSF_centroid_deviation_HG,axis=1),label='HG', marker = 'o')
 plt.legend()
 
-plt.ylim(bottom = 0)
+# plt.ylim(bottom = 0)
 plt.xlabel("Tissue depth ($µm$)", weight='bold', fontsize=12)
 plt.ylabel("Centroid deviation (nm)", weight='bold', fontsize=12)
 
