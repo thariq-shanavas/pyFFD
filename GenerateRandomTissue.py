@@ -12,7 +12,7 @@ from scipy.stats import norm
 def RandomTissue(args):
     [xy_cells, wavelength, dx, dz, n_h, ls, g, unique_layers, random_seed] = args
     # Generates random fluctuations in refractive index following https://doi.org/10.1364/OL.44.004989
-    print('Generating tissue with seed %1.0f' %(random_seed))
+    print('Generating tissue with seed %1.0f, cell size %1.0f and cell width %1.0f um' %(random_seed,xy_cells,xy_cells*dx*10**6))
     rand = np.random.default_rng(random_seed)
     
     if g<0.8 or g>0.98:

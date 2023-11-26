@@ -20,8 +20,8 @@ def STED_psf_fwhm(dx,excitationBeam,depletionBeam,I_sat):
 
     # More realistic estimate of FWHM
     # Following https://doi.org/10.1364/OE.16.004154
-    depletionBeam = np.abs(depletionBeam)/(np.sum(np.abs(depletionBeam))*dx**2)         # This step is a workaround for the power instability. See github issue.
-    excitationBeam = np.abs(excitationBeam)/np.sum(np.abs(excitationBeam)*dx**2)
+    # depletionBeam = np.abs(depletionBeam)/(np.sum(np.abs(depletionBeam))*dx**2)         # This step is a workaround for the power instability. See github issue.
+    # excitationBeam = np.abs(excitationBeam)/np.sum(np.abs(excitationBeam)*dx**2)
     eta = np.exp(-np.log(2)*np.abs(depletionBeam)/I_sat)    
     STED_psf = excitationBeam*eta
 

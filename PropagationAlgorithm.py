@@ -19,6 +19,7 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavel
 
     # x axis is the second index (axis=1). y axis is first (axis=0)
     # This makes sure pcolor represents fields accurately
+    InitialPower = np.sum((np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)*dx**2)
     if xy_cells%2 == 1:
         ValueError('Cell size has to be even')
 
@@ -89,12 +90,6 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavel
             Uy[:,:,2] =  iFFT2(mask*FFT2(Uy[:,:,2]))
             Uz[:,:,2] =  iFFT2(mask*FFT2(Uz[:,:,2]))
 
-        '''
-        n0 = np.sqrt(np.sum(np.abs(Ux[:,:,2])**2+np.abs(Uy[:,:,2])**2+np.abs(Uz[:,:,2])**2)*dx**2)
-        Ux[:,:,2] = Ux[:,:,2]/n0
-        Uy[:,:,2] = Uy[:,:,2]/n0
-        Uz[:,:,2] = Uz[:,:,2]/n0
-        '''
         
         Ux[:,:,0] = Ux[:,:,1]
         Ux[:,:,1] = Ux[:,:,2]
@@ -103,6 +98,11 @@ def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavel
         Uz[:,:,0] = Uz[:,:,1]
         Uz[:,:,1] = Uz[:,:,2]    
     
+    FinalPower = np.sum((np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2)*dx**2)
+    PowerScalingFactor = np.sqrt(InitialPower/FinalPower)
+    Ux = PowerScalingFactor*Ux
+    Uy = PowerScalingFactor*Uy
+    Uz = PowerScalingFactor*Uz
     
     
     return Ux, Uy, Uz
