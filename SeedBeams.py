@@ -38,3 +38,12 @@ def Gaussian_beam(xy_cells,dx,beam_radius):
     beam = beam/np.sqrt(np.sum(np.abs(beam)**2*dx**2))  # Normalization
     
     return beam
+
+def Bessel_beam(xy_cells,dx,beam_radius):
+    indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+    xx, yy = np.meshgrid(dx*indices,dx*indices)
+    r = np.sqrt(xx**2+yy**2) # Radial coordinate
+    beam = special.jv(1,2*r/beam_radius)*np.exp(1j*np.arctan2(yy,xx))
+    beam = beam/np.sqrt(np.sum(np.abs(beam)**2*dx**2))  # Normalization
+    
+    return beam
