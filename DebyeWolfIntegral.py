@@ -51,6 +51,7 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     '''
     InputField_x = InputField_x.astype('complex64')
     InputField_y = InputField_y.astype('complex64')
+    InputPower = np.sum(np.abs(InputField_x)**2+np.abs(InputField_y)**2)*dx**2
 
     MeasurementPlane_z = -MeasurementPlane_z    # Origin is at focus and z axis is along the direction of propagation. See Fig 1, [1]
     xy_cells = np.shape(InputField_x)[0]
@@ -74,7 +75,7 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     theta = np.arcsin(np.minimum(1-1e-8,(np.sqrt(xx**2+yy**2)/R)*NA/n_homogenous))  # theta has to be less than pi/2: There is division by zero in the FFT integrand otherwise.
     phi = np.arctan2(yy,xx)
 
-    ## Propagate a distance f usign Fourier Beam prop
+    ## Propagate a distance f using Fourier Beam prop
     dk = 2*np.pi/(dx*xy_cells)
     indices = np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
     kxkx, kyky = np.meshgrid(dk*indices,dk*indices)
@@ -175,9 +176,11 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
         wrn = 'High output interpolation factor ('+str(1/ScalingFactor2)+'): Increase xy_cells or dx'
         warnings.warn(wrn)
 
-    # TODO: Ex, Ey, Ez needs to be scaled by scalingFactor^2 for the total power integrated in new coordinate system to be 1
+    PowerScalingFactor = np.sqrt(InputPower)    # Power of (Ex, Ey, Ez) has already been normalized to 1
+    Ex = PowerScalingFactor*Ex
+    Ey = PowerScalingFactor*Ey
+    Ez = PowerScalingFactor*Ez
     return Ex,Ey,Ez,target_dx
-    #return Ex,Ey,Ez, out_dx
 
 def SpotSizeCalculator(FocusDepth,BeamRadius,n_homogenous,wavelength,MeasurementPlane_z):
     NA = n_homogenous*1.5*BeamRadius/np.sqrt(BeamRadius**2+FocusDepth**2)

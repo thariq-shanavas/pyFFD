@@ -15,7 +15,7 @@ from SeedBeams import LG_OAM_beam
 # Saturation factor is the peak power of an ideal donut over the saturation power, for either type.
 # To simulate increasing donut power, increase this factor.
 
-saturation_factor = 40
+saturation_factor = 50
 
 LG = np.load('Results/Contrast_LG.npy', allow_pickle=True)
 HG = np.load('Results/Contrast_HG.npy', allow_pickle=True)
@@ -41,8 +41,10 @@ I_sat = 1/saturation_factor*np.max(ideal_donut_LG)
 
 PSF_vs_depth_LG = np.zeros((len(LG[0].depths),num_runs))
 PSF_centroid_deviation_LG = np.zeros((len(LG[0].depths),num_runs))
+donuteBeamPowerLG = np.zeros((len(LG[0].depths),num_runs))
 PSF_vs_depth_HG = np.zeros(PSF_vs_depth_LG.shape)
 PSF_centroid_deviation_HG = np.zeros(PSF_centroid_deviation_LG.shape)
+donuteBeamPowerHG = np.zeros(donuteBeamPowerLG.shape)
 
 for run_number in range(num_runs):
     for depth_index in range(len(depths)):
@@ -54,11 +56,12 @@ for run_number in range(num_runs):
 
         field_profile_LG = LG[run_number].intensity_profiles[depth_index]
         #field_profile_LG = field_profile_LG/(np.sum(field_profile_LG)*dx**2)
-        
+        donuteBeamPowerLG[depth_index,run_number] = np.sum(field_profile_LG*dx**2)
         PSF_vs_depth_LG[depth_index,run_number], PSF_centroid_deviation_LG[depth_index,run_number] = STED_psf_fwhm(dx,excitationBeam,field_profile_LG, I_sat)
         
         field_profile_HG = HG[run_number].intensity_profiles[depth_index]
         #field_profile_HG = field_profile_HG/(np.sum(field_profile_HG)*dx**2)
+        donuteBeamPowerHG[depth_index,run_number] = np.sum(field_profile_HG*dx**2)
         PSF_vs_depth_HG[depth_index,run_number], PSF_centroid_deviation_HG[depth_index,run_number] = STED_psf_fwhm(dx,excitationBeam,field_profile_HG, I_sat)
         '''
         plt.pcolormesh(excitationBeam>fluorescenceThreshold)
@@ -90,12 +93,15 @@ plt.yticks(weight = 'bold', fontsize=12)
 plt.tight_layout()
 
 plt.subplot(2,1,2)
-plt.plot(depths,np.mean(PSF_centroid_deviation_LG,axis=1),label='LG', marker = 'o')
-plt.plot(depths,np.mean(PSF_centroid_deviation_HG,axis=1),label='HG', marker = 'o')
+plt.plot(depths,np.median(PSF_centroid_deviation_LG,axis=1),label='LG', marker = 'o')
+plt.plot(depths,np.median(PSF_centroid_deviation_HG,axis=1),label='HG', marker = 'o')
 plt.legend()
 
 # plt.ylim(bottom = 0)
 plt.xlabel("Tissue depth ($µm$)", weight='bold', fontsize=12)
 plt.ylabel("Centroid deviation (nm)", weight='bold', fontsize=12)
 
+plt.show()
+plt.plot(depths,np.median(donuteBeamPowerLG,axis=1),label='LG', marker = 'o')
+plt.plot(depths,np.median(donuteBeamPowerHG,axis=1),label='HG', marker = 'o')
 plt.show()
