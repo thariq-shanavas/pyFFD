@@ -297,7 +297,7 @@ def Tightfocus_HG_adaptive(args):
 
     HG01_Focus_Intensity = np.abs(Ux[:,:,0])**2+np.abs(Uy[:,:,0])**2+np.abs(Uz[:,:,0])**2
 
-    HG_Focus_Intensity = (HG01_Focus_Intensity+HG10_Focus_Intensity)/2
+    HG_Focus_Intensity = (HG01_Focus_Intensity+HG10_Focus_Intensity)
     plot_HG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,HG10_Focus_Intensity,HG01_Focus_Intensity,HG_Focus_Intensity,depth,run_number)
 
     
