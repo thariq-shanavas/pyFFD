@@ -4,15 +4,56 @@
 import numpy as np
 from FriendlyFourierTransform import FFT2, iFFT2
 import matplotlib.pyplot as plt
+from GenerateRandomTissue import RandomTissue
+from FriendlyFourierTransform import optimal_cell_size
+import copy
+from scipy.interpolate import RegularGridInterpolator
+from helper_classes import Parameters_class,Results_class
+from DebyeWolfIntegral import SpotSizeCalculator
 
-def Propagate_adaptiveResolution(Ux, Uy, Uz, distance, dz, wavelength, section_depth = 1e-6, suppress_evanescent = True):
+def Propagate_adaptiveResolution(Ux, Uy, Uz, distance, dx, dz, run_number, focus_depth, beam_radius, n_h, wavelength, ls, g, max_FDFD_dx = 50e-9, resolution_factor = 20, min_xy_cells = 250, section_depth = 5e-6, suppress_evanescent = True, min_index_layers = 110):
+
     if distance%section_depth>dz:
         print('Warning: Rounding tissue thickness to a multiple of the adaptive thickness parameter.')
-    
-    num_steps = int(np.rint(distance/section_depth))
-    unique_layers_index = np.min(110, int(section_depth/dz))
 
-def Vector_FiniteDifference(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavelength, suppress_evanescent = True):
+    num_steps = int(np.rint(distance/section_depth))
+    FDFD_dx = dx
+    FDFD_dz = dz
+    xy_cells =np.shape(Ux)[0]
+    unique_layers = int(min(min_index_layers,section_depth/dz))
+
+    for step_num in range(num_steps):
+
+        remaining_distance = distance - step_num * section_depth
+        spot_size_at_start_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,remaining_distance)
+        spot_size_at_end_of_FDFD_volume = SpotSizeCalculator(focus_depth,beam_radius,n_h,wavelength,remaining_distance-section_depth)
+
+        original_axis = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+        FDFD_dx = min(spot_size_at_end_of_FDFD_volume/resolution_factor,max_FDFD_dx)
+        xy_cells = optimal_cell_size(spot_size_at_start_of_FDFD_volume, FDFD_dx, min_xy_cells)
+        new_axes = FDFD_dx*np.linspace(-xy_cells/2,xy_cells/2-1,xy_cells,dtype=np.int_)
+        xx_new, yy_new = np.meshgrid(new_axes,new_axes, indexing='ij')  # Mesh grid used for exporting data
+
+        Uz_new = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+        Uy_new = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+        Ux_new = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
+
+        # Bounds error has to be set to False in case (depth%section_depth) is zero.
+        Ux_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,0], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Ux_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Ux[:,:,1], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Uy_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,0], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Uy_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uy[:,:,1], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Uz_new[:,:,0] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,0], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+        Uz_new[:,:,1] = RegularGridInterpolator((original_axis,original_axis),Uz[:,:,1], bounds_error = False, fill_value = 0, method='linear')((xx_new, yy_new))
+
+        [Ux, Uy, Uz] = [Ux_new, Uy_new, Uz_new]
+        n = RandomTissue([xy_cells, wavelength, FDFD_dx, FDFD_dz, n_h, ls, g, unique_layers, run_number])
+        #n = n_h*np.ones((xy_cells,xy_cells,20))
+        Ux,Uy,Uz = Propagate(Ux,Uy,Uz,section_depth, FDFD_dx, FDFD_dz, xy_cells, n, wavelength, suppress_evanescent)
+
+    return Ux,Uy,Uz,FDFD_dx,xy_cells
+
+def Propagate(Ux, Uy, Uz, distance, dx, dz, xy_cells, index, wavelength, suppress_evanescent = True):
     
     # This has the same problem: If dx < lambda/sqrt(2), the field blows up.
     # Implementation follows Eq. 3-8 in Goodman Fourier Optics
