@@ -13,7 +13,7 @@ from DebyeWolfIntegral import SpotSizeCalculator
 
 def Propagate_adaptiveResolution(Ux, Uy, Uz, distance, dx, dz, run_number, focus_depth, beam_radius, n_h, wavelength, ls, g, max_FDFD_dx = 50e-9, resolution_factor = 20, min_xy_cells = 250, section_depth = 5e-6, suppress_evanescent = True, min_index_layers = 110):
 
-    if distance%section_depth>dz:
+    if np.abs(distance/section_depth-np.rint(distance/section_depth))>0.01:
         print('Warning: Rounding tissue thickness to a multiple of the adaptive thickness parameter.')
 
     num_steps = int(np.rint(distance/section_depth))
