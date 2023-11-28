@@ -143,8 +143,8 @@ if __name__ == '__main__':
         for depth in depths:
             args.append([depth, run_number])
 
-    unrolled_results_HG = p.map(LG_donut_PSF, args)
-    unrolled_results_LG = p.map(HG_donut_PSF, args)               # We need to roll up the results into lists, with each list containing the contrast for all depths for a given instance of tissue.
+    unrolled_results_LG = p.map(LG_donut_PSF, args)
+    unrolled_results_HG = p.map(HG_donut_PSF, args)               # We need to roll up the results into lists, with each list containing the contrast for all depths for a given instance of tissue.
 
     tmp_index = 0
     for run_number in range(num_runs):
