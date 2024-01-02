@@ -24,6 +24,7 @@ def STED_psf_fwhm(dx,excitationBeam,depletionBeam,I_sat):
     # excitationBeam = np.abs(excitationBeam)/np.sum(np.abs(excitationBeam)*dx**2)
     eta = np.exp(-np.log(2)*np.abs(depletionBeam)/I_sat)    
     STED_psf = excitationBeam*eta
+    STED_power = np.sum(np.abs(STED_psf)*dx**2)
 
     ## If you use the same formula on a gaussian, you get the FWHM. This is a heuristic.
     # pi*(FWHM/2)^2 = dx^2 * np.sum(STED_psf>np.max(STED_psf)/2)
@@ -37,4 +38,4 @@ def STED_psf_fwhm(dx,excitationBeam,depletionBeam,I_sat):
     centroid_deviation = np.sqrt(centroid_x**2+centroid_y**2)
     ## Fit gaussian     
     # PSF_diameter = dx*getFWHM_GaussianFitScaledAmp(STED_psf)
-    return 10**9*PSF_diameter, 10**9*centroid_deviation
+    return 10**9*PSF_diameter, 10**9*centroid_deviation, STED_power

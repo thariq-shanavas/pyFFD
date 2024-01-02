@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from helper_classes import Results_class
 from SeedBeams import Gaussian_beam
-from ParallelTightFocusContrastVsDepth import Tightfocus_LG
 from DebyeWolfIntegral import SpotSizeCalculator
 from SeedBeams import LG_OAM_beam
 from BeamQuality import STED_psf_fwhm
@@ -24,19 +23,18 @@ excitationBeam = (Gaussian_beam(xy_cells,dx,excitation_spot_size/2))**2
 
 eta = np.exp(-np.log(2)*depletionBeam/I_sat)
 STED_psf = excitationBeam*eta
-plt.figure(figsize=[12,12])
-plt.subplot(221)
-plt.pcolormesh(np.abs(ideal_donut_LG))
+plt.figure(figsize=[24,7])
 
+plt.subplot(131)
+plt.pcolormesh(np.abs(excitationBeam[250:750,250:750]))
+plt.gca().set_aspect('equal')
 
-plt.subplot(222)
-plt.pcolormesh(np.abs(excitationBeam))
+plt.subplot(132)
+plt.pcolormesh(np.abs(depletionBeam[250:750,250:750]))
+plt.gca().set_aspect('equal')
 
-plt.subplot(223)
-plt.pcolormesh(np.abs(depletionBeam))
-
-plt.subplot(224)
-plt.pcolormesh(np.abs(STED_psf))
+plt.subplot(133)
+plt.pcolormesh(np.abs(STED_psf[250:750,250:750]))
+plt.gca().set_aspect('equal')
 plt.show()
-
 print(STED_psf_fwhm(dx,excitationBeam,depletionBeam, I_sat))
