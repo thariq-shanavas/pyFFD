@@ -14,7 +14,7 @@ from SeedBeams import LG_OAM_beam
 # Saturation factor is the peak power of an ideal donut over the saturation power, for either type.
 # To simulate increasing donut power, increase this factor.
 
-saturation_factor = 30
+saturation_factor = 18
 ls = 59     # Scattering mean free path, um
 excitation_wavelength = 635e-9
 
@@ -129,7 +129,7 @@ plt.figure(figsize=[16,4],dpi=500)
 plt.subplot(1,3,1)
 plt.plot(depths,LG_figure_of_merit,label='LG', marker = 'o')
 plt.plot(depths,HG_figure_of_merit,label='HG', marker = 'o')
-plt.plot([0,25,50,75],[90,100,140,165],label='LG, Expt.',linestyle='None',marker = 'D')
+plt.plot([2,25,50,75],[113,137,177,204],label='LG, Expt.',linestyle='None',marker = 'D')
 plt.legend(loc='lower left')
 plt.xlabel('Tissue depth (μm)')
 plt.ylabel('FWHM (nm)')
@@ -150,5 +150,32 @@ plt.legend(loc='lower left')
 plt.ylim(bottom = 0)
 plt.xlabel('Tissue depth (μm)')
 plt.ylabel('STED Power (a.u.)')
+plt.tight_layout()
+plt.show()
+
+#####
+plt.rcParams.update({'font.size': 18})
+plt.rcParams['pcolor.shading'] = 'auto'
+plt.rcParams["font.weight"] = "bold"
+plt.rcParams["axes.labelweight"] = "bold"
+plt.rcParams["axes.linewidth"] = 2
+
+plt.figure(figsize=[12,4],dpi=500)
+plt.subplot(1,2,1)
+plt.plot(depths,LG_figure_of_merit,label='LG, Sim.', marker = 'o')
+plt.plot(depths,HG_figure_of_merit,label='HG, Sim.', marker = 'D')
+plt.plot([2,25,50,75],[113,137,177,204],label='LG, Expt. [10]',linestyle='None',marker = 's')
+plt.legend(loc='lower right')
+plt.xlabel('Tissue depth (μm)')
+plt.ylabel('FWHM (nm)')
+plt.ylim([0,240])
+
+plt.subplot(1,2,2)
+plt.plot(depths,30+10*np.log10(np.exp(-depths/ls)*power_LG),label='LG, Sim.', marker = 'o')
+plt.plot(depths,30+10*np.log10(np.exp(-depths/ls)*power_HG),label='HG, Sim.', marker = 'D')
+plt.legend(loc='lower left')
+#plt.ylim(bottom = 0)
+plt.xlabel('Tissue depth (μm)')
+plt.ylabel('SNR (dB)')
 plt.tight_layout()
 plt.show()

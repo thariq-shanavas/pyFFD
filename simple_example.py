@@ -3,7 +3,7 @@
 
 import numpy as np
 from PropagationAlgorithm import Propagate
-from SeedBeams import Gaussian_beam
+from SeedBeams import Gaussian_beam, LG_OAM_beam
 from DebyeWolfIntegral import TightFocus, SpotSizeCalculator
 from FriendlyFourierTransform import optimal_cell_size
 from GenerateRandomTissue import RandomTissue
@@ -15,14 +15,20 @@ FDFD_dx = 50e-9
 wavelength = 500e-9
 ls = 59e-6  # Mean free path in tissue
 g = 0.90    # Anisotropy factor
+objective_lens_radius_over_beam_radius=2.5  # Self-explanatory: this determines if the objective is overfilled. 2.5 is just about filled.
+
 
 # These three parameters determine the NA of the system
-beam_radius = 1e-3
+beam_radius = 0.8e-3
 focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is the focal length in the medium.
 n_h = 1.33  # Homogenous part of tissue refractive index, also the index of the immersion medium
 
 depth = 10e-6 # Focus light 10 microns under tissue
 suppress_evanescent = True  # Applies the freq. domain filter explained in supplementary material
+objective_lens_radius = objective_lens_radius_over_beam_radius*beam_radius
+
+# This looks wrong, but is correct. Note to self - you've checked this math many times, just trust your past self.
+print('NA of objective lens is '+str(n_h*objective_lens_radius/focus_depth))
 
 unique_layers = 110
 # Procedurally generate these many unique layers of tissue. 
@@ -38,13 +44,18 @@ xy_cells = optimal_cell_size(spot_size, FDFD_dx, min_xy_cells)      # optimal_ce
 
 # Generate the seed beam. Use the same matrix size as before, but choose a convenient dx for the seed
 # In this example, we use a linearly polarized gaussian beam
-seed_dx = 5*beam_radius/(xy_cells)
-seed_x = Gaussian_beam(xy_cells,seed_dx,beam_radius)
+seed_dx = 2*objective_lens_radius/xy_cells
+seed_x = LG_OAM_beam(xy_cells, seed_dx, beam_radius, 1)
 seed_y = np.zeros_like(seed_x)
 
 # Use Debye-Wolf integral to calculate field at two planes near the surface of the tissue.
 Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth,FDFD_dx,2048)
 Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth-FDFD_dz,FDFD_dx,2048)
+
+intensity = np.abs(Ex)**2+np.abs(Ey)**2+np.abs(Ez)**2
+plt.pcolormesh(intensity)
+plt.gca().set_aspect('equal')
+plt.show()
 
 # The finite difference solver expects the initial conditions to be saved in NxNx3 matrices for each polarization.
 # i.e., 
@@ -77,7 +88,7 @@ xx_export, yy_export = np.meshgrid(plotting_axes,plotting_axes, indexing='ij')  
 plotting_field = RegularGridInterpolator((original_axis,original_axis),intensity, bounds_error = True, method='linear')((xx_export, yy_export))
 fig = plt.figure()
 plt.gca().set_aspect('equal')
-plt.pcolormesh(plotting_axes,plotting_axes,RegularGridInterpolator((original_axis,original_axis),intensity, bounds_error = True, method='linear')((xx_export, yy_export)))
+plt.pcolormesh(plotting_axes,plotting_axes,RegularGridInterpolator((original_axis,original_axis),intensity, bounds_error = True, method='linear')((xx_export, yy_export)),shading='auto')
 plt.title("Beam at focus", weight='bold')
 plt.xlabel("x ($µm$)", weight='bold', fontsize=12)
 plt.xticks(weight = 'bold', fontsize=12)

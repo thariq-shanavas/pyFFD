@@ -20,22 +20,24 @@ ls = 59e-6  # Mean free path in tissue
 g = 0.90    # Anisotropy factor
 
 # These three parameters determine the NA of the system
-beam_radius = 1e-3
+beam_radius = 0.8e-3
 focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is the focal length in the medium.
 n_h = 1.33  # Homogenous part of tissue refractive index, also the index of the immersion medium
 
-num_processes = 6       # Number of threads. Make sure there is sufficient RAM
+num_processes = 4       # Number of threads. Make sure there is sufficient RAM
 # TODO: Add check to make sure there is sufficient RAM
 
-num_runs = 20           # Simulate each depth this many times
-depths = np.array([5e-6,10e-6,15e-6,20e-6,25e-6,30e-6,35e-6,40e-6,45e-6,50e-6,55e-6,60e-6])
-
+num_runs = 5           # Simulate each depth this many times
+depths = np.array([5e-6,10e-6,15e-6,20e-6,25e-6,30e-6,35e-6,40e-6,45e-6,50e-6,55e-6,60e-6,65e-6,70e-6,75e-6,80e-6])
+#depths = np.array([80e-6])
+objective_lens_radius_over_beam_radius=2.5  # Self-explanatory: this determines if the objective is overfilled. 2.5 is just about filled.
+objective_lens_radius = objective_lens_radius_over_beam_radius*beam_radius
 
 ## Change the parameters below if you're sure of what you're doing!
 section_depth = 5e-6   # Increase resolution every 5 microns in depth
 max_FDFD_dx = 50e-9
 suppress_evanescent = True  # Applies the freq. domain filter explained in supplementary material
-resolution_factor = 30  # The resolution is increased as the spot size becomes smaller. Increase this for finer resolution. Default = 30
+resolution_factor = 20  # The resolution is increased as the spot size becomes smaller. Increase this for finer resolution. Default = 30
 # TODO: Add a setting for lower bound for lateral resolution
 
 unique_layers = 110
@@ -152,7 +154,7 @@ def HG_donut_PSF(args):
 
 if __name__ == '__main__':
     start_time = time.time()
-    print('NA of objective lens is '+str(n_h*beam_radius*1.5/focus_depth))
+    print('NA of objective lens is '+str(n_h*objective_lens_radius/focus_depth))
     p = Pool(num_processes)                # This executes everything outside this if statement!
 
     LG_result = []              # Results will be stored in a list, with each item being an object of class 'Results'

@@ -50,7 +50,7 @@ def FFT_benchmark(max_cell_size = 3000):
 def optimal_cell_size(spot_size,FDFD_dx,min_cells):
     # FFT is very fast for composite numbers, and slow for primes.
     # This function returns the optimal cell size for fast FFT.
-    minimum_cell_size = np.max([int((spot_size*1.5/FDFD_dx)),int(min_cells)])
+    minimum_cell_size = np.max([int((spot_size*1.6/FDFD_dx)),int(min_cells)])
     try:
         preferred_cell_sizes = np.load('optimal_FFT_sizes.npy') 
     except FileNotFoundError:

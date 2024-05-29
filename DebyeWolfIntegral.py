@@ -3,7 +3,7 @@ from FriendlyFourierTransform import FFT2, iFFT2
 from scipy.interpolate import RegularGridInterpolator
 import warnings
 
-def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0,target_dx=25e-9,zero_padding=4096):
+def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,MeasurementPlane_z=0.0,target_dx=25e-9,zero_padding=4096):
     '''
     Provides the 3D field from focusing a polarized input field through a thick lens
     Axis of the lens is along z. Input polarization is assumed to be along x direction.
