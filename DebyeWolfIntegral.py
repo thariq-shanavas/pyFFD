@@ -157,6 +157,9 @@ def TightFocus(InputField_x,InputField_y,dx,wavelength,n_homogenous,FocusDepth,M
     dx_step1 = out_dx*ScalingFactor1    # This is the resolution of the FFT result when the input is zero-padded
 
     pad = int((zero_padding-xy_cells)/2)
+    if pad<0:
+        raise ValueError("Increase your zero padding for your Debye-Wolf calculation")
+    
     index_step1 = np.linspace(-zero_padding/2,zero_padding/2-1,zero_padding,dtype=np.int_)
     #xx_step1, yy_step1 = np.meshgrid(dx_step1*index_step1,dx_step1*index_step1,indexing='ij')
     xx_final, yy_final = np.meshgrid(target_dx*indices,target_dx*indices,indexing='ij')

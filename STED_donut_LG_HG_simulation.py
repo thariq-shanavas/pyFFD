@@ -24,12 +24,12 @@ beam_radius = 0.8e-3
 focus_depth = 2.5e-3    # Depth at which the beam is focused. Note that this is the focal length in the medium.
 n_h = 1.33  # Homogenous part of tissue refractive index, also the index of the immersion medium
 
-num_processes = 4       # Number of threads. Make sure there is sufficient RAM
+num_processes = 6       # Number of threads. Make sure there is sufficient RAM
 # TODO: Add check to make sure there is sufficient RAM
 
 num_runs = 5           # Simulate each depth this many times
 depths = np.array([5e-6,10e-6,15e-6,20e-6,25e-6,30e-6,35e-6,40e-6,45e-6,50e-6,55e-6,60e-6,65e-6,70e-6,75e-6,80e-6])
-#depths = np.array([80e-6])
+#depths = np.array([10e-6])
 objective_lens_radius_over_beam_radius=2.5  # Self-explanatory: this determines if the objective is overfilled. 2.5 is just about filled.
 objective_lens_radius = objective_lens_radius_over_beam_radius*beam_radius
 
@@ -69,8 +69,8 @@ def LG_donut_PSF(args):
     seed_y = 1j*seed_x
 
     # Use Debye-Wolf integral to calculate field at two planes near the surface of the tissue.
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth,FDFD_dx,2048)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth-FDFD_dz,FDFD_dx,2048)
+    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth,FDFD_dx,3000)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth-FDFD_dz,FDFD_dx,3000)
 
     Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
@@ -126,8 +126,8 @@ def HG_donut_PSF(args):
     (u,v) = (0,1)   # Mode numbers for HG beam
     seed_x = HG_beam(xy_cells, seed_dx, beam_radius, u,v)    # Note that seed_y is first now. This is well behaved and does not fill in at the focus
     seed_y = np.zeros(seed_x.shape)
-    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth,FDFD_dx,2048)
-    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth-FDFD_dz,FDFD_dx,2048)
+    Ex,Ey,Ez,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth,FDFD_dx,3000)
+    Ex2,Ey2,Ez2,_ = TightFocus(seed_x,seed_y,seed_dx,wavelength,n_h,focus_depth,depth-FDFD_dz,FDFD_dx,3000)
 
     Uz = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
     Uy = np.zeros((xy_cells,xy_cells,3),dtype=np.complex64)
