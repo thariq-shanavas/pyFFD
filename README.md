@@ -1,4 +1,6 @@
-This is an implementation of the fast finite difference solver presented in (add paper link).
+## pyFFD - A fast finite difference solver for Maxwell's wave equation in biological tissue
+
+This is an implementation of the fast finite difference solver presented in (TODO:add paper link).
 
 ### Installation
 
