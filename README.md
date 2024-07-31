@@ -14,10 +14,11 @@ simple_example.py is a minimal demonstration of the algorithm. It is single-thre
 
 STED_donut_LG_HG_simulation.py is the code used to generate the results in the paper. Data_visualization.py calculates the STED resolution from the donut profiles calculated by STED_donut_LG_HG_simulation.py
 
-### Known Issues
+### Known Issues/To Do list
 
-When using the adaptive step size algorithm, the depth has to be a multiple of section_depth.
+When using the adaptive step size algorithm, the depth has to be a multiple of `section_depth`.
 
-If the discretization is too large, the power of the beam blows up. i.e., the total optical power at the focus may be greater than the power sent in.
+If the discretization is too large, the power of the beam blows up. i.e., the total optical power at the focus may be greater than the power sent in. Keep the discretization below one-twentieth the wavelength for best results.
+It is possible to relax the discretization requirement by tweaking the frequency-domain filter filter in Section 2 of the supplementary material. Further sanity checks need to be performed before implementing this, so please contact me of you are trying to run this code and running up against computational limitations.
 
-There is currently no check to make sure there is sufficient RAM. If you set num_processes too high, you will run out of RAM and the simulation will slow to a crawl.
+There is currently no check to make sure there is sufficient RAM. If you use heavy multithreading in a machine with limited memory, you will run out of RAM and the simulation will slow to a crawl. I am planning on getting the algorithm to use as many cores as safely possible with the amount of memory available, so the user does not have to tune this themselves.
