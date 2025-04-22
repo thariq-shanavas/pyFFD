@@ -47,7 +47,7 @@ def plot_HG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,HG10_Focus_I
     plt.savefig('Results/HG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png', bbox_inches = 'tight', dpi=500)
     plt.close()
 
-def plot_LG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,LG_Focus_Intensity,FDFD_depth,run_number):
+def plot_LG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,LG_Focus_Intensity,FDFD_depth,run_number,mode_order_number=1):
     
     fig = plt.figure()
     plt.gca().set_aspect('equal')
@@ -73,5 +73,5 @@ def plot_LG(focus_depth,beam_radius,n_h,wavelength,xy_cells,FDFD_dx,LG_Focus_Int
     plt.yticks(weight = 'bold', fontsize=12)
 
     plt.tight_layout()
-    plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'.png', bbox_inches = 'tight', dpi=500)
+    plt.savefig('Results/LG_'+str("{:02d}".format(int(1e6*FDFD_depth)))+'um_run'+str("{:02d}".format(run_number))+'_L-'+str("{:02d}".format(mode_order_number))+'.png', bbox_inches = 'tight', dpi=500)
     plt.close()
