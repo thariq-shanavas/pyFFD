@@ -14,7 +14,7 @@ from SeedBeams import LG_OAM_beam
 # Saturation factor is the peak power of an ideal donut over the saturation power, for either type.
 # To simulate increasing donut power, increase this factor.
 
-saturation_factor = 21
+saturation_factor = 42
 ls = 59     # Scattering mean free path, um
 excitation_wavelength = 635e-9
 
@@ -29,8 +29,9 @@ depths = LG[0].depths * 10**6
 excitation_spot_size = SpotSizeCalculator(LG[0].focus_depth,LG[0].beam_radius,LG[0].n_h,excitation_wavelength,0) # 1/e^2 diameter of a gaussian at focus
 excitationBeam = (Gaussian_beam(xy_cells,dx,excitation_spot_size/2))**2
 depletion_spot_size = SpotSizeCalculator(LG[0].focus_depth,LG[0].beam_radius,LG[0].n_h,depletion_wavelength,0) # 1/e^2 diameter of a gaussian at focus
-ideal_donut_LG = np.abs(LG_OAM_beam(xy_cells, dx, depletion_spot_size/2, 1))**2
-ideal_donut_LG = ideal_donut_LG/(np.sum(ideal_donut_LG)*dx**2)
+
+# Factor of 2 here to account for adding y-polarization in the simulation.
+ideal_donut_LG = 2*np.abs(LG_OAM_beam(xy_cells, dx, depletion_spot_size/2, 1))**2
 #ideal_donut_HG = ideal_donut_HG/(np.sum(ideal_donut_HG)*dx**2)
 
 #I_sat_LG = 1/saturation_factor*np.max(ideal_donut_LG)
@@ -81,26 +82,14 @@ LG_deviation = np.median(PSF_centroid_LG,axis=1)
 power_LG = np.mean(STED_power_LG,axis=1)
 #power_HG = np.mean(STED_power_HG,axis=1)
 
-# Ideal case at surface
+# Append Ideal case at depth = 0
 # Note: Does not use Debye-Wolf integral. There might be a very small error.
+ideal_PSF_diameter, _, ideal_STED_power = STED_psf_fwhm(dx,excitationBeam,ideal_donut_LG, I_sat)
 
-'''
-ideal_PSF_diameter, _, ideal_STED_power = STED_psf_fwhm(dx,excitationBeam,2*ideal_donut_LG, I_sat)
-depths[0] = 0
-LG_figure_of_merit[0] = ideal_PSF_diameter
-HG_figure_of_merit[0] = ideal_PSF_diameter
-LG_deviation[0] = 0
-HG_deviation[0] = 0
-power_LG[0] = ideal_STED_power
-power_HG[0] = ideal_STED_power
-depths = np.concatenate(([0],depths))
 LG_figure_of_merit = np.concatenate(([ideal_PSF_diameter],LG_figure_of_merit))
-HG_figure_of_merit = np.concatenate(([ideal_PSF_diameter],HG_figure_of_merit))
 LG_deviation = np.concatenate(([0],LG_deviation))
-HG_deviation = np.concatenate(([0],HG_deviation))
 power_LG = np.concatenate(([ideal_STED_power],power_LG))
-power_HG = np.concatenate(([ideal_STED_power],power_HG))
-'''
+depths = np.concatenate(([0],depths))
 
 plt.rcParams.update({'font.size': 20})
 plt.rcParams['pcolor.shading'] = 'auto'
