@@ -18,7 +18,7 @@ saturation_factor = 42
 ls = 59     # Scattering mean free path, um
 excitation_wavelength = 635e-9
 
-LG = np.load('Results/LG_result.npy', allow_pickle=True)
+LG = np.load('Results/LG_result_4-27.npy', allow_pickle=True)
 #HG = np.load('Results/HG_result.npy', allow_pickle=True)
 num_runs = len(LG)
 
@@ -81,49 +81,6 @@ LG_deviation = np.median(PSF_centroid_LG,axis=1)
 #HG_deviation = np.median(PSF_centroid_HG,axis=1)
 power_LG = np.mean(STED_power_LG,axis=1)
 #power_HG = np.mean(STED_power_HG,axis=1)
-
-# Append Ideal case at depth = 0
-# Note: Does not use Debye-Wolf integral. There might be a very small error.
-ideal_PSF_diameter, _, ideal_STED_power = STED_psf_fwhm(dx,excitationBeam,ideal_donut_LG, I_sat)
-
-LG_figure_of_merit = np.concatenate(([ideal_PSF_diameter],LG_figure_of_merit))
-LG_deviation = np.concatenate(([0],LG_deviation))
-power_LG = np.concatenate(([ideal_STED_power],power_LG))
-depths = np.concatenate(([0],depths))
-
-plt.rcParams.update({'font.size': 20})
-plt.rcParams['pcolor.shading'] = 'auto'
-plt.rcParams["font.weight"] = "bold"
-plt.rcParams["axes.labelweight"] = "bold"
-plt.rcParams["axes.linewidth"] = 2
-
-plt.figure(figsize=[16,4],dpi=500)
-plt.subplot(1,3,1)
-plt.plot(depths,LG_figure_of_merit,label='LG', marker = 'o')
-#plt.plot(depths,HG_figure_of_merit,label='HG', marker = 'o')
-plt.plot([2,25,50,75],[113,137,177,204],label='LG, Expt.',linestyle='None',marker = 'D')
-plt.legend(loc='lower left')
-plt.xlabel('Tissue depth (μm)')
-plt.ylabel('FWHM (nm)')
-plt.ylim(bottom = 0)
-
-plt.subplot(1,3,2)
-plt.plot(depths,LG_deviation,label='LG', marker = 'o')
-#plt.plot(depths,HG_deviation,label='HG', marker = 'o')
-plt.legend(loc='lower left')
-plt.ylim(bottom = 0)
-plt.xlabel('Tissue depth (μm)')
-plt.ylabel('PSF deviation (nm)')
-
-plt.subplot(1,3,3)
-plt.plot(depths,100/8*np.exp(-depths/ls)*power_LG,label='LG', marker = 'o')
-#plt.plot(depths,100/8*np.exp(-depths/ls)*power_HG,label='HG', marker = 'o')
-plt.legend(loc='lower left')
-plt.ylim(bottom = 0)
-plt.xlabel('Tissue depth (μm)')
-plt.ylabel('STED Power (a.u.)')
-plt.tight_layout()
-plt.show()
 
 #####
 plt.rcParams.update({'font.size': 18})

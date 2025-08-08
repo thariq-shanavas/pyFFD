@@ -14,7 +14,7 @@ from SeedBeams import LG_OAM_beam
 # Saturation factor is the peak power of an ideal donut over the saturation power, for either type.
 # To simulate increasing donut power, increase this factor.
 
-saturation_factor = 19
+saturation_factor = 15
 ls = 96     # Scattering mean free path, um
 excitation_wavelength = 910e-9
 
@@ -93,7 +93,7 @@ plt.figure(figsize=[12,4],dpi=500)
 plt.subplot(1,2,1)
 plt.plot(depths,LG_figure_of_merit,label='Simulation', marker = 'o')
 #plt.plot(depths,HG_figure_of_merit,label='HG, Sim.', marker = 'D')
-plt.plot([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],[186, 184, 230, 236, 270, 247, 348, 283, 266, 271, 297],label='Experiment',linestyle='None',marker = 's')
+plt.plot([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],[242.12,257.166,245.177,288.369,264.925,283,303.615,303.971,282.809, 299.23, 280.119],label='Experiment',linestyle='None',marker = 's')
 plt.legend(loc='lower right')
 plt.xlabel('Tissue depth (μm)')
 plt.ylabel('FWHM (nm)')
